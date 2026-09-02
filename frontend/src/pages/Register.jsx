@@ -9,7 +9,7 @@ import {
   User,
   CheckCircle,
 } from "lucide-react";
-import eyeVisual from "../assets/Register.jpg";
+import eyeVisual from "../assets/register.jpg";
 
 export default function Register() {
   const [credentials, setCredentials] = useState({
