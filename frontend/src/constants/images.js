@@ -1,7 +1,7 @@
 // Image constants - Add more images here and reference by name
 import hero1 from "../assets/hero1 .jpg";
 import hero2 from "../assets/Hero2.jpg";
-import hero3 from "../assets/Hero3.jpg";
+import hero3 from "../assets/hero3.jpg";
 import about1 from "../assets/about1.png";
 import about2 from "../assets/about2.png";
 import about3 from "../assets/about3.png";
