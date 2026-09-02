@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  OPTICIAN
+  PATIENT
+}
+
+model User {
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  password               String         // Hashed password
+  fullName               String
+  phoneNumber            String?
+  dob                    DateTime?
+  gender                 String?
+  role                   Role           @default(PATIENT)
+  
+  // Relations
+  prescriptionsAsPatient Prescription[] @relation("PatientPrescriptions")
+  prescriptionsAsDoctor  Prescription[] @relation("OpticianPrescriptions")
+  appointmentsAsPatient  Appointment[]  @relation("PatientAppointments")
+  appointmentsAsDoctor   Appointment[]  @relation("OpticianAppointments")
+  orders                 Order[]
+  reviews                Review[]
+  
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  brand       String
+  material    String
+  price       Float
+  shape       String      // Frame shape (e.g., Round, Square) - for face shape recommendation
+  gender      String      // Target gender (e.g., Men, Women, Unisex)
+  stockLevel  Int         @default(0)
+  imageUrl    String?
+  modelUrl    String?
+  
+  // 3D Frame Calibration Metadata
+  scaleMultiplier Float   @default(1.0)
+  xOffset         Float   @default(0.0)
+  yOffset         Float   @default(0.0)
+  zOffset         Float   @default(0.0)
+  rotationX       Float   @default(0.0)
+  rotationY       Float   @default(0.0)
+  rotationZ       Float   @default(0.0)
+  
+  // Relations
+  reviews     Review[]
+  orderItems  OrderItem[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("products")
+}
+
+model Lens {
+  id          String      @id @default(uuid())
+  type        String      // Lens type (e.g., progressive, polycarbonate, bifocal)
+  material    String
+  description String?
+  price       Float
+  stockLevel  Int         @default(0)
+  
+  // Relations
+  orderItems  OrderItem[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("lenses")
+}
+
+model Prescription {
+  id              String      @id @default(uuid())
+  patientId       String
+  patient         User        @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  opticianId      String?
+  optician        User?       @relation("OpticianPrescriptions", fields: [opticianId], references: [id])
+  
+  rawOcrResult    String?     // Raw text result from OCR extraction
+  ocrImageUrl     String?
+  isValidated     Boolean     @default(false)
+  status          String      @default("PENDING") // PENDING, VALIDATED, REJECTED
+  rejectionReason String?
+  
+  // Right Eye (OD) clinical metrics
+  odSph        Float?
+  odCyl        Float?
+  odAxis       Int?
+  odAdd        Float?
+  
+  // Left Eye (OS) clinical metrics
+  osSph        Float?
+  osCyl        Float?
+  osAxis       Int?
+  osAdd        Float?
+  
+  pd           Float?      // Pupillary Distance
+  
+  // Relations
+  orders       Order[]
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("prescriptions")
+}
+
+model Appointment {
+  id          String      @id @default(uuid())
+  patientId   String
+  patient     User        @relation("PatientAppointments", fields: [patientId], references: [id])
+  opticianId  String?
+  optician    User?       @relation("OpticianAppointments", fields: [opticianId], references: [id])
+  
+  dateTime    DateTime
+  status      String      @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  notes       String?
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("appointments")
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  patientId       String
+  patient         User          @relation(fields: [patientId], references: [id])
+  prescriptionId  String?
+  prescription    Prescription? @relation(fields: [prescriptionId], references: [id])
+  
+  totalAmount     Float
+  status          String        @default("PENDING") // PENDING, PROCESSING, READY_FOR_PICKUP, COMPLETED, CANCELLED, SHIPPED, DELIVERED
+  
+  // Shipping Details
+  shippingAddress String?
+  recipientName   String?
+  recipientPhone  String?
+  shippingCost    Float         @default(0.0)
+  
+  // Courier Tracking
+  courierName     String?
+  trackingNumber  String?
+  
+  // Payment Details
+  paymentMethod   String        @default("COD") // COD, CARD
+  paymentStatus   String        @default("PENDING") // PENDING, PAID, FAILED
+
+  // Relations
+  items          OrderItem[]
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  frameId   String?
+  frame     Product? @relation(fields: [frameId], references: [id])
+  lensId    String?
+  lens      Lens?    @relation(fields: [lensId], references: [id])
+  
+  quantity  Int      @default(1)
+  price     Float    // Saved historical price at the time of purchase
+  
+  @@map("order_items")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  patientId String
+  patient   User     @relation(fields: [patientId], references: [id])
+  frameId   String?
+  frame     Product? @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  
+  rating    Int      // 1 to 5 stars
+  comment   String?
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?  // The user who receives the notification, or null if sent to all of a role (e.g. all opticians)
+  role      Role?    // Targeted role (e.g. notifications sent to all OPTICIANs)
+  title     String
+  message   String
+  type      String   // APPOINTMENT_BOOKED, PRESCRIPTION_UPLOADED, ORDER_PLACED, PRESCRIPTION_STATUS, etc.
+  isRead    Boolean  @default(false)
+  relatedId String?  // e.g. appointmentId, prescriptionId, orderId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
