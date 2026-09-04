@@ -3,7 +3,11 @@ const envUrl = import.meta.env.VITE_API_BASE_URL;
 
 export const API_BASE_URL = (() => {
   if (envUrl && envUrl.trim() !== "") {
-    return envUrl.replace(/\/+$/, ""); // Remove trailing slashes if any
+    let cleanUrl = envUrl.trim().replace(/\/+$/, ""); // Remove trailing slashes
+    if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+      cleanUrl = `https://${cleanUrl}`; // Ensure protocol is present so browser treats it as absolute URL
+    }
+    return cleanUrl;
   }
   
   if (typeof window !== "undefined" && window.location.hostname) {
