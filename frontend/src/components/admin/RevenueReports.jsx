@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
-const API = "http://localhost:3000";
+const API = API_BASE_URL;
 
 const STATUS_COLORS = {
   PENDING:          "bg-amber-50 text-amber-700 border-amber-200",

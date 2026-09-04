@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 const statusConfig = {
   "Pending Review": { cls: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-400" },
@@ -51,7 +52,7 @@ export default function PrescriptionReview() {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:3000/api/prescriptions/patients", {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions/patients`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -68,7 +69,7 @@ export default function PrescriptionReview() {
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/prescriptions", {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -181,7 +182,7 @@ export default function PrescriptionReview() {
         rejectionReason: reason !== "" ? reason : null,
       };
 
-      const response = await fetch(`http://localhost:3000/api/prescriptions/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions/${id}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -212,7 +213,7 @@ export default function PrescriptionReview() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/prescriptions", {
+      const res = await fetch(`${API_BASE_URL}/api/prescriptions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -598,13 +599,13 @@ export default function PrescriptionReview() {
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Original Uploaded Slip</p>
                 <div className="border border-slate-200/80 rounded-2xl p-3.5 bg-slate-50/50 shadow-inner">
                   <img
-                    src={selected.imageUrl.startsWith("http") ? selected.imageUrl : `http://localhost:3000${selected.imageUrl}`}
+                    src={selected.imageUrl.startsWith("http") ? selected.imageUrl : `${API_BASE_URL}${selected.imageUrl}`}
                     alt="Uploaded Prescription Slip"
                     className="max-h-64 rounded-xl object-contain mx-auto border border-slate-200 shadow-sm"
                   />
                   <div className="text-center mt-2.5">
                     <a
-                      href={selected.imageUrl.startsWith("http") ? selected.imageUrl : `http://localhost:3000${selected.imageUrl}`}
+                      href={selected.imageUrl.startsWith("http") ? selected.imageUrl : `${API_BASE_URL}${selected.imageUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"

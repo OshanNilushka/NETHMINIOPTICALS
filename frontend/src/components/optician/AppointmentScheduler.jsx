@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const HOURS = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"];
@@ -87,7 +88,7 @@ export default function AppointmentScheduler() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/api/appointments", {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -136,7 +137,7 @@ export default function AppointmentScheduler() {
 
     const dbStatus = newUiStatus.toUpperCase();
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/${rawId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/appointments/${rawId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -168,7 +169,7 @@ export default function AppointmentScheduler() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/appointments", {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

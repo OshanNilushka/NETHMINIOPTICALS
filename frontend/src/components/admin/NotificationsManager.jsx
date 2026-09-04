@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 
-const API = "http://localhost:3000";
+const API = API_BASE_URL;
 
 const TARGET_ROLES = [
   { value: "PATIENT", label: "All Patients", icon: "👤", color: "bg-violet-50 border-violet-200 text-violet-700" },

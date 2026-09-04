@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 const statusBadge = (status) => {
   const map = {
@@ -57,7 +58,7 @@ export default function PatientRecords() {
 
   const fetchPatients = async (selectedIdToKeep = null) => {
     try {
-      const response = await fetch("http://localhost:3000/api/prescriptions/patients", {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions/patients`, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
@@ -124,12 +125,12 @@ export default function PatientRecords() {
 
   const fetchCatalog = async () => {
     try {
-      const framesRes = await fetch("http://localhost:3000/api/products");
+      const framesRes = await fetch(`${API_BASE_URL}/api/products`);
       if (framesRes.ok) {
         const framesData = await framesRes.json();
         setFrames(framesData);
       }
-      const lensesRes = await fetch("http://localhost:3000/api/products/lenses");
+      const lensesRes = await fetch(`${API_BASE_URL}/api/products/lenses`);
       if (lensesRes.ok) {
         const lensesData = await lensesRes.json();
         setLenses(lensesData);
@@ -149,7 +150,7 @@ export default function PatientRecords() {
     if (!selected) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/prescriptions", {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -195,7 +196,7 @@ export default function PatientRecords() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -5,6 +5,7 @@ import UserManagement from "../components/admin/UserManagement";
 import OpticianManagement from "../components/admin/OpticianManagement";
 import NotificationsManager from "../components/admin/NotificationsManager";
 import RevenueReports from "../components/admin/RevenueReports";
+import { API_BASE_URL } from "../config/api";
 
 const TAB_TITLES = {
   overview: "Dashboard Overview",
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    fetch("http://localhost:3000/api/users/profile", {
+    fetch(`${API_BASE_URL}/api/users/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {

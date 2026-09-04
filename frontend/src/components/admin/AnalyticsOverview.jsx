@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
-const API = "http://localhost:3000";
+const API = API_BASE_URL;
 
 function StatCard({ label, value, change, color, bg, icon, onClick, clickable }) {
   return (
