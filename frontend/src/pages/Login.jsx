@@ -48,7 +48,14 @@ export default function Login() {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Server returned status ${response.status}: ${text.slice(0, 80) || response.statusText}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to log in.");
