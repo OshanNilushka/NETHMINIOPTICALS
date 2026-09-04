@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config/api';
 import { 
   ShieldCheck, 
   Sparkles, 
@@ -50,7 +51,7 @@ export default function CheckoutCustomizerModal({
     if (!token) return;
 
     // 1. Fetch real lenses from API
-    fetch("http://localhost:3000/api/products/lenses")
+    fetch(`${API_BASE_URL}/api/products/lenses`)
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -60,7 +61,7 @@ export default function CheckoutCustomizerModal({
       .catch(err => console.error("Error loading lenses:", err));
 
     // 2. Fetch validated prescriptions
-    fetch("http://localhost:3000/api/prescriptions", {
+    fetch(`${API_BASE_URL}/api/prescriptions`, {
       headers: {
         "Authorization": `Bearer ${token}`
       }
@@ -149,7 +150,7 @@ export default function CheckoutCustomizerModal({
       };
 
       // Step 1: Create Order in Backend DB
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,7 +168,7 @@ export default function CheckoutCustomizerModal({
 
       // Step 2: Handle Online Card Payment (PayHere Sandbox)
       if (paymentMethod === "CARD") {
-        const payRes = await fetch("http://localhost:3000/api/orders/payhere-hash", {
+        const payRes = await fetch(`${API_BASE_URL}/api/orders/payhere-hash`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

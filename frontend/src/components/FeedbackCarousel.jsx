@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Star, Quote, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 const FALLBACK_REVIEWS = [
   {
@@ -33,7 +34,7 @@ export default function FeedbackCarousel() {
   useEffect(() => {
     const fetchApprovedReviews = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/reviews/approved");
+        const response = await fetch(`${API_BASE_URL}/api/reviews/approved`);
         if (response.ok) {
           const data = await response.json();
           if (data && data.length > 0) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import GlassesViewer from './Glassviwer';
 import CheckoutCustomizerModal from './CheckoutCustomizerModal';
+import { API_BASE_URL } from '../config/api';
 
 class GlassesErrorBoundary extends React.Component {
   constructor(props) {
@@ -62,7 +63,7 @@ const getModelFile = (url) => {
   if (!url) return glassesModel;
   if (MODEL_MAP[url]) return MODEL_MAP[url];
   if (url.startsWith('/uploads/')) {
-    return `http://localhost:3000${url}`;
+    return `${API_BASE_URL}${url}`;
   }
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
@@ -91,7 +92,7 @@ const getProductImageUrl = (url) => {
     return url;
   }
   if (url.startsWith('/uploads/')) {
-    return `http://localhost:3000${url}`;
+    return `${API_BASE_URL}${url}`;
   }
   return url;
 };
@@ -278,7 +279,7 @@ export default function Catalog({ isDashboardView = false, onCheckoutSuccess }) 
   };
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/products')
+    fetch(`${API_BASE_URL}/api/products`)
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch products");
         return res.json();

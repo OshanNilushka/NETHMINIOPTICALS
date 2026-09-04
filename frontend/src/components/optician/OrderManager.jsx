@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 const dbToUiStatus = (status) => {
   switch (status) {
@@ -127,7 +128,7 @@ export default function OrderManager() {
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -177,7 +178,7 @@ export default function OrderManager() {
       if (!token) return;
 
       const dbStatus = uiToDbStatus(status);
-      const response = await fetch(`http://localhost:3000/api/orders/${rawId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${rawId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -205,7 +206,7 @@ export default function OrderManager() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(`http://localhost:3000/api/orders/${rawId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${rawId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

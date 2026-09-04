@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Mail, Send, CheckCircle2, User, Phone, Package, Clock, Sparkles } from "lucide-react";
+import { API_BASE_URL } from "../../config/api";
 
 export default function PickupNotificationModal({ isOpen, onClose, onRefresh }) {
   const [orders, setOrders] = useState([]);
@@ -15,7 +16,7 @@ export default function PickupNotificationModal({ isOpen, onClose, onRefresh }) 
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -101,7 +102,7 @@ export default function PickupNotificationModal({ isOpen, onClose, onRefresh }) 
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("http://localhost:3000/api/orders/notify-pickup", {
+      const response = await fetch(`${API_BASE_URL}/api/orders/notify-pickup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,7 +144,7 @@ export default function PickupNotificationModal({ isOpen, onClose, onRefresh }) 
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch("http://localhost:3000/api/orders/notify-pickup", {
+      const response = await fetch(`${API_BASE_URL}/api/orders/notify-pickup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

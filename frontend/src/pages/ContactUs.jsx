@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ export default function ContactUs() {
     setSuccess(false);
 
     try {
-      const response = await fetch("http://localhost:3000/api/contacts", {
+      const response = await fetch(`${API_BASE_URL}/api/contacts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

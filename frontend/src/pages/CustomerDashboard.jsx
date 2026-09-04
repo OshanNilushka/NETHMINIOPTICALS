@@ -1589,7 +1589,7 @@ function OCRPanel({ profile, setProfile, onPrescriptionUploaded }) {
     formData.append("prescription", selectedFile);
 
     try {
-      const response = await fetch("http://localhost:3000/api/prescriptions/scan", {
+      const response = await fetch(`${API_BASE_URL}/api/prescriptions/scan`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -1622,7 +1622,7 @@ function OCRPanel({ profile, setProfile, onPrescriptionUploaded }) {
       }
 
       try {
-        const response = await fetch("http://localhost:3000/api/prescriptions", {
+        const response = await fetch(`${API_BASE_URL}/api/prescriptions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -2012,7 +2012,7 @@ function AppointmentPanel() {
     if (!token) return;
 
     try {
-      const response = await fetch("http://localhost:3000/api/appointments", {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -2044,7 +2044,7 @@ function AppointmentPanel() {
     const pad = (n) => String(n).padStart(2, '0');
     const dateStr = `${currentYear}-${pad(currentMonth + 1)}-${pad(dateVal)}`;
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/booked?date=${dateStr}`, {
+      const response = await fetch(`${API_BASE_URL}/api/appointments/booked?date=${dateStr}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -2086,7 +2086,7 @@ function AppointmentPanel() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/api/appointments", {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2354,7 +2354,7 @@ function OrdersPanel({ orders, profile, onOrderCancelled }) {
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/api/orders/${selectedOrder.rawId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${selectedOrder.rawId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
