@@ -50,4 +50,4 @@ jobs:
           app-name: 'nethmini-backend-core'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BD6FCAA821C84196B99FBDAF2799A5FF }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
