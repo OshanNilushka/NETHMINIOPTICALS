@@ -123,24 +123,54 @@ const REAL_OPTICAL_LENSES = [
   { type: "Standard Hard-Coated Scratch Resistant Lens", brand: "Standard", price: 3500.0, stockLevel: 100, description: "Durable daily optical lens with scratch resistant hard coating" }
 ];
 
-// GET /api/products/lenses
-// Fetch all real optical lenses from the database catalog (auto-seeding if needed)
-router.get('/lenses', async (req, res) => {
+let isLensesSeeded = false;
+let isProductLensesSeeded = false;
+
+// Helper: Seed lenses once in background
+async function ensureLensesSeeded() {
+  if (isLensesSeeded) return;
   try {
-    let lenses = await prisma.lens.findMany();
-    if (lenses.length < REAL_OPTICAL_LENSES.length) {
+    const existing = await prisma.lens.count();
+    if (existing < REAL_OPTICAL_LENSES.length) {
       for (const lensData of REAL_OPTICAL_LENSES) {
-        const found = lenses.find(l => l.type === lensData.type);
+        const found = await prisma.lens.findFirst({ where: { type: lensData.type } });
         if (!found) {
-          try {
-            await prisma.lens.create({ data: lensData });
-          } catch (e) {
-            console.warn("Lens seeding warning:", e.message);
-          }
+          await prisma.lens.create({ data: lensData }).catch(() => {});
         }
       }
-      lenses = await prisma.lens.findMany();
     }
+    isLensesSeeded = true;
+  } catch (e) {
+    console.warn("Lens seeding notice:", e.message);
+  }
+}
+
+// Helper: Seed catalog lenses once in background
+async function ensureProductLensesSeeded() {
+  if (isProductLensesSeeded) return;
+  try {
+    const count = await prisma.product.count({ where: { imageUrl: { startsWith: '/lenses/' } } });
+    if (count < LENSES_CATALOG.length) {
+      for (const lensItem of LENSES_CATALOG) {
+        const found = await prisma.product.findFirst({ where: { name: lensItem.name } });
+        if (!found) {
+          await prisma.product.create({ data: lensItem }).catch(() => {});
+        }
+      }
+    }
+    isProductLensesSeeded = true;
+  } catch (e) {
+    console.warn("Product lenses seed notice:", e.message);
+  }
+}
+
+// GET /api/products/lenses
+// Fetch all real optical lenses from the database catalog
+router.get('/lenses', async (req, res) => {
+  try {
+    ensureLensesSeeded(); // Non-blocking background check
+    const lenses = await prisma.lens.findMany();
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300');
     res.json(lenses);
   } catch (error) {
     console.error('Error fetching lenses:', error);
@@ -245,26 +275,9 @@ const LENSES_CATALOG = [
 // Fetch all products (frames + lenses catalog)
 router.get('/', async (req, res) => {
   try {
-    let products = await prisma.product.findMany();
-    
-    // Check if lenses already exist in database, if not seed them
-    const existingLenses = products.filter(p => p.imageUrl && p.imageUrl.startsWith('/lenses/'));
-    if (existingLenses.length < LENSES_CATALOG.length) {
-      for (const lensItem of LENSES_CATALOG) {
-        const found = products.find(p => p.name === lensItem.name || p.imageUrl === lensItem.imageUrl);
-        if (!found) {
-          try {
-            await prisma.product.create({
-              data: lensItem
-            });
-          } catch (e) {
-            console.warn("Lens product seed warning:", e.message);
-          }
-        }
-      }
-      products = await prisma.product.findMany();
-    }
-    
+    ensureProductLensesSeeded(); // Non-blocking background check
+    const products = await prisma.product.findMany();
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=120');
     res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);

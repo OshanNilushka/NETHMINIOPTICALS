@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import 'dotenv/config';
 import fs from 'fs';
 import { prisma } from './lib/prisma.js';
@@ -26,11 +27,15 @@ if (!fs.existsSync('public/uploads')) {
 
 const app = express();
 
+app.use(compression()); // Gzip/Brotli payload compression for fast network transfers
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
-// Serve static uploaded files
-app.use('/uploads', express.static('public/uploads'));
+// Serve static uploaded files with 7-day browser caching
+app.use('/uploads', express.static('public/uploads', {
+  maxAge: '7d',
+  etag: true,
+}));
 
 // Auth routes
 app.use('/api/auth', authRouter);

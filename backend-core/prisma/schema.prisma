@@ -37,6 +37,8 @@ model User {
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 
+  @@index([email])
+  @@index([role])
   @@map("users")
 }
 
@@ -68,6 +70,8 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  @@index([shape])
+  @@index([gender])
   @@map("products")
 }
 
@@ -121,6 +125,8 @@ model Prescription {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  @@index([patientId])
+  @@index([status])
   @@map("prescriptions")
 }
 
@@ -138,6 +144,9 @@ model Appointment {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  @@index([patientId])
+  @@index([dateTime])
+  @@index([status])
   @@map("appointments")
 }
 
@@ -171,6 +180,9 @@ model Order {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  @@index([patientId])
+  @@index([status])
+  @@index([paymentStatus])
   @@map("orders")
 }
 
@@ -186,6 +198,7 @@ model OrderItem {
   quantity  Int      @default(1)
   price     Float    // Saved historical price at the time of purchase
   
+  @@index([orderId])
   @@map("order_items")
 }
 
@@ -202,6 +215,8 @@ model Review {
   
   createdAt DateTime @default(now())
 
+  @@index([status])
+  @@index([patientId])
   @@map("reviews")
 }
 
@@ -229,5 +244,8 @@ model Notification {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
+  @@index([role])
+  @@index([isRead])
   @@map("notifications")
 }
