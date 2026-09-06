@@ -101,4 +101,32 @@ app.get('/api/users/profile', authMiddleware, async (req, res) => {
   }
 });
 
+// Update user profile route
+app.put('/api/users/profile', authMiddleware, async (req, res) => {
+  try {
+    const { fullName, phoneNumber, dob, gender } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        ...(fullName && { fullName }),
+        ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(dob && { dob: new Date(dob) }),
+        ...(gender !== undefined && { gender }),
+      },
+    });
+
+    const safeUser = { ...updatedUser };
+    delete safeUser.password;
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: safeUser,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update user profile.' });
+  }
+});
+
 export default app;

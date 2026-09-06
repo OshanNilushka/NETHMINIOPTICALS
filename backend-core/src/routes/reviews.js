@@ -177,4 +177,32 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/reviews/:id (Patient owner or Optician/Admin)
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const review = await prisma.review.findUnique({
+      where: { id },
+    });
+
+    if (!review) {
+      return res.status(404).json({ error: 'Review not found.' });
+    }
+
+    if (req.user.role === 'PATIENT' && review.patientId !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to delete this review.' });
+    }
+
+    await prisma.review.delete({
+      where: { id },
+    });
+
+    res.json({ success: true, message: 'Review deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    res.status(500).json({ error: 'Failed to delete review.' });
+  }
+});
+
 export default router;

@@ -475,9 +475,22 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         .json({ error: `Product with ID ${id} not found.` });
     }
 
-    await prisma.product.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      // Unlink from order items (preserve historical order receipts)
+      await tx.orderItem.updateMany({
+        where: { frameId: id },
+        data: { frameId: null },
+      });
+      // Delete reviews for this frame
+      await tx.review.deleteMany({
+        where: { frameId: id },
+      });
+      // Delete product
+      await tx.product.delete({
+        where: { id },
+      });
     });
+
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error deleting product:', error);

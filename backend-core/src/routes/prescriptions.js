@@ -654,4 +654,41 @@ function parsePrescriptionText(rawText) {
   return result;
 }
 
+// DELETE /api/prescriptions/:id
+// Delete a prescription record (Patient owner or Optician/Admin)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const prescription = await prisma.prescription.findUnique({
+      where: { id },
+    });
+
+    if (!prescription) {
+      return res.status(404).json({ error: `Prescription with ID ${id} not found.` });
+    }
+
+    if (req.user.role === 'PATIENT' && prescription.patientId !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to delete this prescription.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Unlink from orders
+      await tx.order.updateMany({
+        where: { prescriptionId: id },
+        data: { prescriptionId: null },
+      });
+      // Delete prescription
+      await tx.prescription.delete({
+        where: { id },
+      });
+    });
+
+    res.json({ message: 'Prescription deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting prescription:', error);
+    res.status(500).json({ error: 'Server error deleting prescription.' });
+  }
+});
+
 export default router;

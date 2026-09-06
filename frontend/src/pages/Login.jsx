@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getImage } from "../constants/images";
 import { API_BASE_URL } from "../config/api";
+import AuthSuccessModal from "../components/AuthSuccessModal";
 
 export default function Login() {
   const [role, setRole] = useState("PATIENT"); // PATIENT, OPTICIAN, ADMIN
@@ -10,6 +11,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [successModalData, setSuccessModalData] = useState(null);
 
   // Forgot password views and inputs
   const [view, setView] = useState("LOGIN"); // LOGIN, FORGOT_EMAIL, FORGOT_RESET
@@ -64,20 +66,30 @@ export default function Login() {
       setLoading(false);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user_email", data.user.email);
-      alert(`Logged in successfully as ${data.user.role}!`);
+      if (data.user.fullName) {
+        localStorage.setItem("user_name", data.user.fullName);
+      }
+
+      let targetHash = "#/dashboard";
       if (data.user.role === "PATIENT") {
         const guestOrder = localStorage.getItem("guest_order");
         if (guestOrder) {
           localStorage.setItem("checkout_after_login", "true");
-          window.location.hash = "#/catalog";
+          targetHash = "#/catalog";
         } else {
-          window.location.hash = "#/dashboard";
+          targetHash = "#/dashboard";
         }
       } else if (data.user.role === "OPTICIAN") {
-        window.location.hash = "#/optician-dashboard";
+        targetHash = "#/optician-dashboard";
       } else if (data.user.role === "ADMIN") {
-        window.location.hash = "#/admin-dashboard";
+        targetHash = "#/admin-dashboard";
       }
+
+      setSuccessModalData({
+        role: data.user.role,
+        userName: data.user.fullName || data.user.email?.split("@")[0] || "User",
+        targetHash,
+      });
     } catch (err) {
       setLoading(false);
       setError(err.message);
@@ -554,6 +566,19 @@ export default function Login() {
           )}
         </div>
       </div>
+
+      {/* Auto-Redirecting Welcome Modal */}
+      <AuthSuccessModal
+        isOpen={Boolean(successModalData)}
+        role={successModalData?.role}
+        userName={successModalData?.userName}
+        onComplete={() => {
+          if (successModalData?.targetHash) {
+            window.location.hash = successModalData.targetHash;
+          }
+        }}
+        duration={5000}
+      />
     </div>
   );
 }

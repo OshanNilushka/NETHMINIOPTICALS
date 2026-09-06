@@ -2825,11 +2825,39 @@ function ChatPanel({ profile }) {
 // ----------------------------------------------------
 function SettingsPanel({ profile, setProfile }) {
   const [formData, setFormData] = useState({ ...profile });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setProfile(formData);
-    alert("Profile configurations saved successfully!");
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          fullName: formData.name,
+          phoneNumber: formData.phone,
+          dob: formData.dob,
+          gender: formData.gender,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to update profile");
+      }
+
+      setProfile(formData);
+      alert("Profile configurations saved successfully!");
+    } catch (err) {
+      alert(`Error saving profile: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
