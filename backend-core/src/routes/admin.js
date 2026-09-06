@@ -145,7 +145,36 @@ router.delete('/users/:id', async (req, res) => {
     if (user.role === 'ADMIN')
       return res.status(403).json({ error: 'Cannot delete admin accounts.' });
 
-    await prisma.user.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete notifications related to this user
+      await tx.notification.deleteMany({ where: { userId: id } });
+      // 2. Delete reviews submitted by this user
+      await tx.review.deleteMany({ where: { patientId: id } });
+      // 3. Delete appointments where user is patient or optician
+      await tx.appointment.deleteMany({
+        where: { OR: [{ patientId: id }, { opticianId: id }] },
+      });
+      // 4. Nullify optician reference on prescriptions
+      await tx.prescription.updateMany({
+        where: { opticianId: id },
+        data: { opticianId: null },
+      });
+      // 5. Delete orders and items for this patient
+      const userOrders = await tx.order.findMany({
+        where: { patientId: id },
+        select: { id: true },
+      });
+      const orderIds = userOrders.map((o) => o.id);
+      if (orderIds.length > 0) {
+        await tx.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+        await tx.order.deleteMany({ where: { patientId: id } });
+      }
+      // 6. Delete prescriptions owned by this patient
+      await tx.prescription.deleteMany({ where: { patientId: id } });
+      // 7. Delete the user record
+      await tx.user.delete({ where: { id } });
+    });
+
     res.json({ message: 'User deleted successfully.' });
   } catch (error) {
     console.error('Delete user error:', error);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getImage } from "../constants/images";
 import { API_BASE_URL } from "../config/api";
+import AuthSuccessModal from "../components/AuthSuccessModal";
 
 export default function SignUp() {
   const [fullName, setFullName] = useState("");
@@ -15,6 +16,7 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [successModalData, setSuccessModalData] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,15 +82,25 @@ export default function SignUp() {
 
       setLoading(false);
       localStorage.setItem("token", data.token);
-      alert("Account created successfully! Welcome to NethminiOpticals.");
+      if (fullName) {
+        localStorage.setItem("user_name", fullName);
+      }
+      if (email) {
+        localStorage.setItem("user_email", email);
+      }
       
+      let targetHash = "#/dashboard";
       const guestOrder = localStorage.getItem("guest_order");
       if (guestOrder) {
         localStorage.setItem("checkout_after_login", "true");
-        window.location.hash = "#/catalog";
-      } else {
-        window.location.hash = "#/dashboard";
+        targetHash = "#/catalog";
       }
+
+      setSuccessModalData({
+        role: "PATIENT",
+        userName: fullName || email?.split("@")[0] || "User",
+        targetHash,
+      });
     } catch (err) {
       setLoading(false);
       setError(err.message);
@@ -395,6 +407,19 @@ export default function SignUp() {
           </div>
         </div>
       </div>
+
+      {/* Auto-Redirecting Welcome Modal */}
+      <AuthSuccessModal
+        isOpen={Boolean(successModalData)}
+        role={successModalData?.role}
+        userName={successModalData?.userName}
+        onComplete={() => {
+          if (successModalData?.targetHash) {
+            window.location.hash = successModalData.targetHash;
+          }
+        }}
+        duration={5000}
+      />
     </div>
   );
 }

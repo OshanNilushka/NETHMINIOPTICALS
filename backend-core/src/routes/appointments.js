@@ -322,4 +322,33 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/appointments/:id
+// Delete or cancel an appointment (Patient owner or Optician/Admin)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: `Appointment with ID ${id} not found.` });
+    }
+
+    if (req.user.role === 'PATIENT' && appointment.patientId !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to delete this appointment.' });
+    }
+
+    await prisma.appointment.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Appointment deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting appointment:', error);
+    res.status(500).json({ error: 'Server error deleting appointment.' });
+  }
+});
+
 export default router;
