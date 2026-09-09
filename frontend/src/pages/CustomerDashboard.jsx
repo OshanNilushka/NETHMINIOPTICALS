@@ -72,6 +72,7 @@ export default function CustomerDashboard() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
@@ -326,55 +327,86 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans relative">
+      {/* Mobile Drawer Backdrop Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar Layout */}
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800">
+      <aside
+        className={`fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[85vw] md:max-w-none md:w-64 bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
         {/* Brand logo */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+        <div className="p-5 md:p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold tracking-tight">
+              Nethmini<span className="text-cyan-400">Opticals</span>
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight">
-            Nethmini<span className="text-cyan-400">Opticals</span>
-          </span>
+
+          {/* Close button for mobile menu */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Close Menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* User Card */}
         <div className="p-4 mx-4 my-4 bg-slate-800/50 rounded-xl flex items-center gap-3 border border-slate-800">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow">
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow shrink-0">
             {profile.name.charAt(0)}
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden min-w-0">
             <h4 className="font-semibold text-sm truncate text-slate-100">{profile.name}</h4>
             <span className="text-xs text-slate-400">Patient Dashboard</span>
           </div>
         </div>
 
         {/* Nav tabs */}
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${activeTab === tab.id
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-600/10"
-                : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-                }`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                activeTab === tab.id
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/10"
+                  : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+              }`}
             >
               <TabIcon type={tab.icon} />
               {tab.name}
             </button>
           ))}
-          {/* Shop Catalog is now integrated directly in tabs above */}
         </nav>
 
         {/* Logout / Exit */}
         <div className="p-4 border-t border-slate-800">
           <button
-            onClick={() => setShowLogoutModal(true)}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setShowLogoutModal(true);
+            }}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 transition-all cursor-pointer border-none bg-transparent"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,19 +418,32 @@ export default function CustomerDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto max-h-screen">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200/80 px-6 py-4 flex justify-between items-center shrink-0">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 capitalize">
-              {activeTab === "overview" ? `Welcome back, ${profile.name.split(' ')[0]}!` : `${activeTab.replace(/([A-Z])/g, " $1")} Dashboard`}
-            </h1>
-            <p className="text-xs text-slate-500">
-              {new Date().toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
+        <header className="bg-white border-b border-slate-200/80 px-4 md:px-6 py-3.5 md:py-4 flex justify-between items-center shrink-0 sticky top-0 z-30 shadow-sm md:shadow-none">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger Button for Mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 -ml-1 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer shrink-0"
+              title="Open Navigation Menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 capitalize truncate">
+                {activeTab === "overview" ? `Welcome back, ${profile.name.split(' ')[0]}!` : `${activeTab.replace(/([A-Z])/g, " $1")} Dashboard`}
+              </h1>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                {new Date().toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* Quick Prescr status */}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -412,7 +457,7 @@ export default function CustomerDashboard() {
                 fetchNotifications();
               }}
               title="Refresh Data"
-              className="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200/70 rounded-full transition-all cursor-pointer mr-1"
+              className="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200/70 rounded-full transition-all cursor-pointer"
             >
               <svg className="w-5 h-5 active:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -435,7 +480,7 @@ export default function CustomerDashboard() {
 
               {/* Notification Dropdown */}
               {showNotifDropdown && (
-                <div className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 flex flex-col overflow-hidden max-h-[400px]">
+                <div className="absolute right-0 mt-2.5 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl z-50 flex flex-col overflow-hidden max-h-[400px]">
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-150 flex justify-between items-center text-slate-800">
                     <span className="font-extrabold text-sm">Notifications ({unreadCount})</span>
                     {unreadCount > 0 && (
@@ -485,7 +530,7 @@ export default function CustomerDashboard() {
         </header>
 
         {/* Dashboard Pages */}
-        <div className="p-6 flex-1 max-w-[1400px] w-full mx-auto">
+        <div className="p-4 sm:p-6 flex-1 max-w-[1400px] w-full mx-auto">
           {activeTab === "overview" && <OverviewPanel setActiveTab={setActiveTab} profile={profile} orders={orders} />}
           {activeTab === "tryon" && <TryOnPanel onOrderPlaced={fetchProfile} profile={profile} />}
           {activeTab === "catalog" && (
