@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { getImage } from "../constants/images";
 import { API_BASE_URL } from "../config/api";
 import AuthSuccessModal from "../components/AuthSuccessModal";
@@ -18,33 +18,149 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [successModalData, setSuccessModalData] = useState(null);
 
+  // Real-time validation touched state & temporary 2-second valid badge
+  const [touched, setTouched] = useState({});
+  const [validBadges, setValidBadges] = useState({});
+  const [showStrengthMeter, setShowStrengthMeter] = useState(false);
+  const validTimerRefs = useRef({});
+  const strengthTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      Object.values(validTimerRefs.current).forEach((timer) => clearTimeout(timer));
+      if (strengthTimerRef.current) clearTimeout(strengthTimerRef.current);
+    };
+  }, []);
+
+  const triggerPasswordStrengthTimer = () => {
+    setShowStrengthMeter(true);
+    if (strengthTimerRef.current) {
+      clearTimeout(strengthTimerRef.current);
+    }
+    strengthTimerRef.current = setTimeout(() => {
+      setShowStrengthMeter(false);
+    }, 2000);
+  };
+
+  const markTouched = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const showTemporaryValidBadge = (field) => {
+    setValidBadges((prev) => ({ ...prev, [field]: true }));
+    if (validTimerRefs.current[field]) {
+      clearTimeout(validTimerRefs.current[field]);
+    }
+    validTimerRefs.current[field] = setTimeout(() => {
+      setValidBadges((prev) => ({ ...prev, [field]: false }));
+    }, 2000);
+  };
+
+  // Compute live validation errors
+  const getErrors = () => {
+    const errs = {};
+    if (!fullName || fullName.trim().length === 0) {
+      errs.fullName = "Full Name is required";
+    } else if (fullName.trim().length < 3) {
+      errs.fullName = "Must be at least 3 characters";
+    }
+
+    if (!email) {
+      errs.email = "Email Address is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errs.email = "Enter a valid email (e.g. name@example.com)";
+    }
+
+    if (!phone) {
+      errs.phone = "Phone Number is required";
+    } else {
+      const digitsOnly = phone.replace(/\D/g, "");
+      if (digitsOnly.length !== 10) {
+        errs.phone = "Phone number must be exactly 10 digits";
+      }
+    }
+
+    if (!dob) {
+      errs.dob = "Date of Birth is required";
+    } else {
+      const selected = new Date(dob);
+      const today = new Date();
+      if (selected >= today) {
+        errs.dob = "Date of Birth must be in the past";
+      }
+    }
+
+    if (!gender) {
+      errs.gender = "Please select a gender";
+    }
+
+    if (!password) {
+      errs.password = "Password is required";
+    } else if (password.length < 8) {
+      errs.password = "Must be at least 8 characters";
+    }
+
+    if (!confirmPassword) {
+      errs.confirmPassword = "Please confirm your password";
+    } else if (confirmPassword !== password) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (!agreeTerms) {
+      errs.agreeTerms = "You must agree to the Terms & Policy";
+    }
+
+    return errs;
+  };
+
+  const fieldErrors = getErrors();
+
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { label: "", color: "bg-slate-200", textColor: "text-slate-400", width: "w-0" };
+    let score = 0;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    if (score <= 1) return { label: "Weak", color: "bg-rose-500", textColor: "text-rose-600", width: "w-1/3" };
+    if (score <= 3) return { label: "Medium", color: "bg-amber-500", textColor: "text-amber-600", width: "w-2/3" };
+    return { label: "Strong", color: "bg-emerald-500", textColor: "text-emerald-600", width: "w-full" };
+  };
+
+  const pwdStrength = getPasswordStrength(password);
+
+  const getFieldBorderClass = (fieldName) => {
+    if (touched[fieldName] && fieldErrors[fieldName]) {
+      return "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10 bg-rose-50/10";
+    }
+    if (validBadges[fieldName]) {
+      return "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10 bg-emerald-50/10";
+    }
+    return "border-slate-200 focus:border-blue-500 focus:ring-blue-500/10 bg-white";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validations
-    if (!fullName || !email || !password || !confirmPassword || !phone || !dob || !gender) {
-      setError("Please fill in all fields.");
-      return;
-    }
+    // Touch all fields on submit
+    setTouched({
+      fullName: true,
+      email: true,
+      phone: true,
+      dob: true,
+      gender: true,
+      password: true,
+      confirmPassword: true,
+      agreeTerms: true,
+    });
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
+    const currentErrors = getErrors();
+    const firstErrorMsg = Object.values(currentErrors)[0];
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    if (!agreeTerms) {
-      setError("You must agree to the Terms of Service & Privacy Policy.");
+    if (firstErrorMsg) {
+      setError(firstErrorMsg);
       return;
     }
 
@@ -63,7 +179,7 @@ export default function SignUp() {
           phone,
           dob,
           gender,
-          role: "PATIENT", // Public sign-up is always for patients only
+          role: "PATIENT",
         }),
       });
 
@@ -163,19 +279,19 @@ export default function SignUp() {
           {/* Bullet highlights */}
           <div className="flex flex-col gap-4.5 bg-white/10 backdrop-blur-lg border border-white/20 p-6 rounded-3xl shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200">
+              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200 font-bold">
                 ✓
               </div>
               <p className="text-white font-semibold text-[15px]">Interactive Virtual Spectacle Try-On</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200">
+              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200 font-bold">
                 ✓
               </div>
               <p className="text-white font-semibold text-[15px]">Prescription Digitization in Seconds</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200">
+              <div className="w-6 h-6 rounded-full bg-cyan-300/20 flex items-center justify-center text-cyan-200 font-bold">
                 ✓
               </div>
               <p className="text-white font-semibold text-[15px]">Automated Order Tracking & SMS Alerts</p>
@@ -226,115 +342,377 @@ export default function SignUp() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
             {/* Full Name */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="name" className="text-[14px] font-bold text-slate-700">
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                placeholder="John Doe"
-                required
-              />
+              <div className="flex justify-between items-center">
+                <label htmlFor="name" className="text-[14px] font-bold text-slate-700">
+                  Full Name
+                </label>
+                {touched.fullName && fieldErrors.fullName && (
+                  <span className="text-xs font-bold text-rose-500">
+                    {fieldErrors.fullName}
+                  </span>
+                )}
+              </div>
+              <div className="relative flex items-center">
+                <input
+                  id="name"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFullName(val);
+                    if (!touched.fullName) markTouched("fullName");
+                    if (val && val.trim().length >= 3) {
+                      showTemporaryValidBadge("fullName");
+                    } else {
+                      setValidBadges((prev) => ({ ...prev, fullName: false }));
+                    }
+                  }}
+                  onBlur={() => markTouched("fullName")}
+                  className={`w-full px-4.5 py-3.5 ${touched.fullName && (fieldErrors.fullName || validBadges.fullName) ? "pr-12" : ""} bg-white border rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("fullName")}`}
+                  placeholder="John Doe"
+                  required
+                />
+                {touched.fullName && fieldErrors.fullName && (
+                  <div className="absolute right-3.5 pointer-events-none">
+                    <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                )}
+                {!fieldErrors.fullName && validBadges.fullName && (
+                  <div className="absolute right-3.5 pointer-events-none transition-all duration-300">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Email & Phone side by side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Email Address */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="email" className="text-[14px] font-bold text-slate-700">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  placeholder="name@example.com"
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <label htmlFor="email" className="text-[14px] font-bold text-slate-700">
+                    Email Address
+                  </label>
+                  {touched.email && fieldErrors.email && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.email}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEmail(val);
+                      if (!touched.email) markTouched("email");
+                      if (val && /\S+@\S+\.\S+/.test(val)) {
+                        showTemporaryValidBadge("email");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, email: false }));
+                      }
+                    }}
+                    onBlur={() => markTouched("email")}
+                    className={`w-full px-4.5 py-3.5 ${touched.email && (fieldErrors.email || validBadges.email) ? "pr-12" : ""} bg-white border rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("email")}`}
+                    placeholder="name@example.com"
+                    required
+                  />
+                  {touched.email && fieldErrors.email && (
+                    <div className="absolute right-3.5 pointer-events-none">
+                      <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                  {!fieldErrors.email && validBadges.email && (
+                    <div className="absolute right-3.5 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Phone Number */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="phone" className="text-[14px] font-bold text-slate-700">
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  placeholder="e.g. 0771234567"
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <label htmlFor="phone" className="text-[14px] font-bold text-slate-700">
+                    Phone Number
+                  </label>
+                  {touched.phone && fieldErrors.phone && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.phone}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPhone(val);
+                      if (!touched.phone) markTouched("phone");
+                      const digitsOnly = val.replace(/\D/g, "");
+                      if (digitsOnly.length === 10) {
+                        showTemporaryValidBadge("phone");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, phone: false }));
+                      }
+                    }}
+                    onBlur={() => markTouched("phone")}
+                    className={`w-full px-4.5 py-3.5 ${touched.phone && (fieldErrors.phone || validBadges.phone) ? "pr-12" : ""} bg-white border rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("phone")}`}
+                    placeholder="e.g. 0771234567"
+                    required
+                  />
+                  {touched.phone && fieldErrors.phone && (
+                    <div className="absolute right-3.5 pointer-events-none">
+                      <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                  {!fieldErrors.phone && validBadges.phone && (
+                    <div className="absolute right-3.5 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Date of Birth & Gender side by side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Date of Birth */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="dob" className="text-[14px] font-bold text-slate-700">
-                  Date of Birth
-                </label>
-                <input
-                  id="dob"
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <label htmlFor="dob" className="text-[14px] font-bold text-slate-700">
+                    Date of Birth
+                  </label>
+                  {touched.dob && fieldErrors.dob && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.dob}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="dob"
+                    type="date"
+                    value={dob}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDob(val);
+                      if (!touched.dob) markTouched("dob");
+                      if (val && new Date(val) < new Date()) {
+                        showTemporaryValidBadge("dob");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, dob: false }));
+                      }
+                    }}
+                    onBlur={() => markTouched("dob")}
+                    className={`w-full px-4.5 py-3.5 bg-white border rounded-2xl font-semibold text-slate-800 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("dob")}`}
+                    required
+                  />
+                  {!fieldErrors.dob && validBadges.dob && (
+                    <div className="absolute right-10 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Gender */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="gender" className="text-[14px] font-bold text-slate-700">
-                  Gender
-                </label>
-                <select
-                  id="gender"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-850 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  required
-                >
-                  <option value="" disabled>Select Gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
-                </select>
+                <div className="flex justify-between items-center">
+                  <label htmlFor="gender" className="text-[14px] font-bold text-slate-700">
+                    Gender
+                  </label>
+                  {touched.gender && fieldErrors.gender && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.gender}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <select
+                    id="gender"
+                    value={gender}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setGender(val);
+                      if (!touched.gender) markTouched("gender");
+                      if (val) {
+                        showTemporaryValidBadge("gender");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, gender: false }));
+                      }
+                    }}
+                    onBlur={() => markTouched("gender")}
+                    className={`w-full px-4.5 py-3.5 bg-white border rounded-2xl font-semibold text-slate-800 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("gender")}`}
+                    required
+                  >
+                    <option value="" disabled>Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                  {!fieldErrors.gender && validBadges.gender && (
+                    <div className="absolute right-9 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Passwords */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Password */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="text-[14px] font-bold text-slate-700">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  placeholder="Min 8 characters"
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <label htmlFor="password" className="text-[14px] font-bold text-slate-700">
+                    Password
+                  </label>
+                  {touched.password && fieldErrors.password && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.password}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPassword(val);
+                      if (!touched.password) markTouched("password");
+                      triggerPasswordStrengthTimer();
+                      if (val && val.length >= 8) {
+                        showTemporaryValidBadge("password");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, password: false }));
+                      }
+                      if (confirmPassword) {
+                        if (confirmPassword === val && confirmPassword.length >= 8) {
+                          showTemporaryValidBadge("confirmPassword");
+                        } else {
+                          setValidBadges((prev) => ({ ...prev, confirmPassword: false }));
+                        }
+                      }
+                    }}
+                    onBlur={() => markTouched("password")}
+                    className={`w-full px-4.5 py-3.5 ${touched.password && (fieldErrors.password || validBadges.password) ? "pr-12" : ""} bg-white border rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("password")}`}
+                    placeholder="Min 8 characters"
+                    required
+                  />
+                  {touched.password && fieldErrors.password && (
+                    <div className="absolute right-3.5 pointer-events-none">
+                      <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                  {!fieldErrors.password && validBadges.password && (
+                    <div className="absolute right-3.5 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Password Strength Meter (Auto-disappears after 2 seconds) */}
+                {password.length > 0 && showStrengthMeter && (
+                  <div className="mt-1 flex flex-col gap-1 animate-[fadeIn_0.2s_ease-in-out]">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400 font-medium">Strength:</span>
+                      <span className={`font-bold ${pwdStrength.textColor}`}>{pwdStrength.label}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className={`h-full transition-all duration-300 ${pwdStrength.color} ${pwdStrength.width}`}></div>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Confirm Password */}
               <div className="flex flex-col gap-1">
-                <label htmlFor="confirmPassword" className="text-[14px] font-bold text-slate-700">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4.5 py-3.5 bg-white border border-slate-200 rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  placeholder="Repeat password"
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <label htmlFor="confirmPassword" className="text-[14px] font-bold text-slate-700">
+                    Confirm Password
+                  </label>
+                  {touched.confirmPassword && fieldErrors.confirmPassword && (
+                    <span className="text-[11px] font-bold text-rose-500">
+                      {fieldErrors.confirmPassword}
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setConfirmPassword(val);
+                      if (!touched.confirmPassword) markTouched("confirmPassword");
+                      if (val && val === password && val.length >= 8) {
+                        showTemporaryValidBadge("confirmPassword");
+                      } else {
+                        setValidBadges((prev) => ({ ...prev, confirmPassword: false }));
+                      }
+                    }}
+                    onBlur={() => markTouched("confirmPassword")}
+                    className={`w-full px-4.5 py-3.5 ${touched.confirmPassword && (fieldErrors.confirmPassword || validBadges.confirmPassword) ? "pr-12" : ""} bg-white border rounded-2xl font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 transition-all ${getFieldBorderClass("confirmPassword")}`}
+                    placeholder="Repeat password"
+                    required
+                  />
+                  {touched.confirmPassword && fieldErrors.confirmPassword && (
+                    <div className="absolute right-3.5 pointer-events-none">
+                      <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                  {!fieldErrors.confirmPassword && validBadges.confirmPassword && (
+                    <div className="absolute right-3.5 pointer-events-none transition-all duration-300">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-300">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -358,19 +736,27 @@ export default function SignUp() {
                 id="terms"
                 type="checkbox"
                 checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
+                onChange={(e) => {
+                  setAgreeTerms(e.target.checked);
+                  if (!touched.agreeTerms) markTouched("agreeTerms");
+                }}
                 className="mt-1 w-5 h-5 border border-slate-200 rounded-lg text-blue-600 focus:ring-blue-500/20 focus:ring-offset-0 transition-all cursor-pointer"
               />
-              <label htmlFor="terms" className="ml-2.5 text-[13.5px] font-semibold text-slate-500 cursor-pointer select-none leading-relaxed">
-                I agree to the{" "}
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-bold transition-colors">
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-bold transition-colors">
-                  Privacy Policy
-                </a>.
-              </label>
+              <div className="ml-2.5 flex-1">
+                <label htmlFor="terms" className="text-[13.5px] font-semibold text-slate-500 cursor-pointer select-none leading-relaxed">
+                  I agree to the{" "}
+                  <a href="#" className="text-blue-600 hover:text-blue-500 font-bold transition-colors">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="#" className="text-blue-600 hover:text-blue-500 font-bold transition-colors">
+                    Privacy Policy
+                  </a>.
+                </label>
+                {touched.agreeTerms && fieldErrors.agreeTerms && (
+                  <p className="text-xs font-bold text-rose-500 mt-0.5">{fieldErrors.agreeTerms}</p>
+                )}
+              </div>
             </div>
 
             {/* Submit Button */}
