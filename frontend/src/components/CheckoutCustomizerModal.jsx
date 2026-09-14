@@ -168,9 +168,12 @@ export default function CheckoutCustomizerModal({
 
       // Step 2: Handle Online Card Payment (PayHere Sandbox)
       if (paymentMethod === "CARD") {
-        const payRes = await fetch(`${API_BASE_URL}/api/orders/payhere-hash`, {
+        const payRes = await fetch(`${API_BASE_URL}/api/payments/hash`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${token}` : ""
+          },
           body: JSON.stringify({
             orderId: order.id,
             amount: grandTotal,
@@ -179,7 +182,8 @@ export default function CheckoutCustomizerModal({
         });
 
         if (!payRes.ok) {
-          throw new Error("Could not initialize PayHere payment gateway.");
+          const errBody = await payRes.json().catch(() => ({}));
+          throw new Error(errBody.error || "Could not initialize PayHere payment gateway.");
         }
 
         const payData = await payRes.json();
