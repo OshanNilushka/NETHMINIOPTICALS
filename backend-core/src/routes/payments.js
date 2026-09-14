@@ -4,12 +4,12 @@ import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
 
-const MERCHANT_ID     = process.env.PAYHERE_MERCHANT_ID;
-const MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
-const NGROK_URL       = process.env.PAYHERE_NGROK_URL;
+const MERCHANT_ID     = (process.env.PAYHERE_MERCHANT_ID || '1236588').trim();
+const MERCHANT_SECRET = (process.env.PAYHERE_MERCHANT_SECRET || 'MTk5NzEwOTUzODE1MDA5MTM3NTMxMTgwOTc5NTkwMzY5MzU0NTE2OQ==').trim();
+const NGROK_URL       = (process.env.PAYHERE_NGROK_URL || '').trim();
 
 // ─── Helper: generate MD5 hex ────────────────────────────────────────────────
-const md5 = (str) => crypto.createHash('md5').update(str).digest('hex').toUpperCase();
+const md5 = (str) => crypto.createHash('md5').update(str || '').digest('hex').toUpperCase();
 
 // ─── POST /api/payments/hash ─────────────────────────────────────────────────
 // Called by the frontend before redirecting to PayHere.
@@ -18,7 +18,7 @@ router.post('/hash', async (req, res) => {
   try {
     const { orderId, amount, currency = 'LKR' } = req.body;
 
-    if (!orderId || !amount) {
+    if (!orderId || amount === undefined || amount === null) {
       return res.status(400).json({ error: 'orderId and amount are required.' });
     }
 
@@ -28,15 +28,18 @@ router.post('/hash', async (req, res) => {
     const hashedSecret    = md5(MERCHANT_SECRET);
     const hash            = md5(`${MERCHANT_ID}${orderId}${amountFormatted}${currency}${hashedSecret}`);
 
+    const origin = req.headers.origin || process.env.FRONTEND_URL || 'https://nethminiopticals.vercel.app';
+    const baseUrl = NGROK_URL || process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+
     return res.json({
       merchant_id:  MERCHANT_ID,
       order_id:     orderId,
       amount:       amountFormatted,
       currency,
       hash,
-      notify_url:   `${NGROK_URL}/api/payments/notify`,
-      return_url:   'http://localhost:5173/#/dashboard',
-      cancel_url:   'http://localhost:5173/#/catalog',
+      notify_url:   `${baseUrl}/api/payments/notify`,
+      return_url:   `${origin}/#/dashboard`,
+      cancel_url:   `${origin}/#/catalog`,
       sandbox:      true,
     });
   } catch (err) {
