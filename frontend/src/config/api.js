@@ -22,5 +22,5 @@ export const API_BASE_URL = (() => {
     }
   }
   
-  return "http://localhost:3000";
+  return "https://nethmini-backend-core-cbczf4awbfbxa2g5.centralindia-01.azurewebsites.net";
 })();
