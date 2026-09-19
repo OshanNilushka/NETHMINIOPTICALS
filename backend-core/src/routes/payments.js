@@ -4,13 +4,19 @@ import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
 
-const STRIPE_SECRET_KEY = (process.env.STRIPE_SECRET_KEY || '').trim();
-const stripe = new Stripe(STRIPE_SECRET_KEY);
+const getStripe = () => {
+  const key = (process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY is missing in environment variables.');
+  }
+  return new Stripe(key);
+};
 
 // ─── POST /api/payments/create-checkout-session ──────────────────────────────
 // Initiates a Stripe Checkout session for an order
 router.post('/create-checkout-session', async (req, res) => {
   try {
+    const stripe = getStripe();
     const { orderId, amount, currency = 'lkr', items = [] } = req.body;
 
     if (!orderId || amount === undefined || amount === null) {
@@ -62,6 +68,7 @@ router.post('/create-checkout-session', async (req, res) => {
 // Frontend calls this when redirected back to verify session status & update DB
 router.post('/verify-session', async (req, res) => {
   try {
+    const stripe = getStripe();
     const { sessionId, orderId } = req.body;
 
     if (!sessionId && !orderId) {
@@ -113,6 +120,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   let event;
 
   try {
+    const stripe = getStripe();
     if (webhookSecret && sig) {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } else {
@@ -145,4 +153,5 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 });
 
 export default router;
+
 
