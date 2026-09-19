@@ -22,5 +22,5 @@ export const API_BASE_URL = (() => {
     }
   }
   
-  return "https://nethmini-backend-core-cbczf4awbfbxa2g5.centralindia-01.azurewebsites.net";
+  return "https://nethminiopticals-backend-core.vercel.app";
 })();
