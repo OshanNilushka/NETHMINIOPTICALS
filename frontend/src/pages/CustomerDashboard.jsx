@@ -1042,13 +1042,14 @@ function TryOnPanel({ onOrderPlaced, profile }) {
 
             const mapped = framesData.map((item, idx) => {
               let glbUrl = MOCK_FRAMES[idx % MOCK_FRAMES.length].glbUrl;
-              if (item.imageUrl) {
-                if (item.imageUrl.startsWith('/uploads/')) {
-                  glbUrl = `${API_BASE_URL}${item.imageUrl}`;
-                } else if (item.imageUrl.includes('/models/')) {
-                  glbUrl = item.imageUrl;
-                } else {
-                  glbUrl = item.imageUrl.replace('/src/assets/', '/src/assets/models/');
+              let rawUrl = item.modelUrl || item.imageUrl;
+              if (rawUrl) {
+                if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+                  glbUrl = rawUrl;
+                } else if (rawUrl.includes('/models/')) {
+                  glbUrl = rawUrl;
+                } else if (!rawUrl.startsWith('/uploads/')) {
+                  glbUrl = rawUrl.replace('/src/assets/', '/src/assets/models/');
                 }
               }
               return {
@@ -1058,7 +1059,14 @@ function TryOnPanel({ onOrderPlaced, profile }) {
                 price: `LKR ${item.price.toLocaleString()}`,
                 type: item.shape,
                 svgPath: MOCK_FRAMES[idx % MOCK_FRAMES.length].svgPath,
-                glbUrl: glbUrl
+                glbUrl: glbUrl,
+                scaleMultiplier: item.scaleMultiplier,
+                xOffset: item.xOffset,
+                yOffset: item.yOffset,
+                zOffset: item.zOffset,
+                rotationX: item.rotationX,
+                rotationY: item.rotationY,
+                rotationZ: item.rotationZ
               };
             });
             setAllFrames(mapped);
