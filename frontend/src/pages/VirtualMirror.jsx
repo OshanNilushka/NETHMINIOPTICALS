@@ -91,11 +91,11 @@ export default function VirtualMirror() {
               }
 
               if (dbModelUrl) {
-                if (dbModelUrl.startsWith('/uploads/')) {
-                  glbUrl = `${API_BASE_URL}${dbModelUrl}`;
+                if (dbModelUrl.startsWith('http://') || dbModelUrl.startsWith('https://')) {
+                  glbUrl = dbModelUrl;
                 } else if (dbModelUrl.includes('/models/')) {
                   glbUrl = dbModelUrl;
-                } else {
+                } else if (!dbModelUrl.startsWith('/uploads/')) {
                   glbUrl = dbModelUrl.replace('/src/assets/', '/src/assets/models/');
                 }
               }
