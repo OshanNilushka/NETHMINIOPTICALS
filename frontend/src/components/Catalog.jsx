@@ -59,17 +59,40 @@ const MODEL_MAP = {
   "sun_glasses.glb": sunGlassesModel,
 };
 
-const getModelFile = (url) => {
+const FALLBACK_MODELS = [
+  glassesModel,
+  rayBanModel,
+  oakleyModel,
+  metalRoundModel,
+  blackGlassesModel,
+  sunGlassesModel,
+  cartoonGlassesModel,
+  glasses2Model,
+  glasses08Model,
+  glasses09Model,
+  glasses12Model,
+  glasses13Model
+];
+
+const getModelFile = (url, item) => {
   if (!url) return glassesModel;
   if (MODEL_MAP[url]) return MODEL_MAP[url];
-  if (url.startsWith('/uploads/')) {
-    return `${API_BASE_URL}${url}`;
-  }
+
+  const filename = url.substring(url.lastIndexOf('/') + 1);
+  if (MODEL_MAP[filename]) return MODEL_MAP[filename];
+
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  const filename = url.substring(url.lastIndexOf('/') + 1);
-  return MODEL_MAP[filename] || glassesModel;
+
+  // If file is from /uploads/ (which doesn't exist on Vercel serverless),
+  // fallback gracefully to one of the built-in bundled 3D models so catalog always renders 3D models
+  if (url.startsWith('/uploads/')) {
+    const itemIndex = item && item.id ? (typeof item.id === 'number' ? item.id : String(item.id).charCodeAt(0)) : 0;
+    return FALLBACK_MODELS[Math.abs(itemIndex) % FALLBACK_MODELS.length];
+  }
+
+  return glassesModel;
 };
 
 const getModelPath = (item) => {
@@ -566,7 +589,7 @@ export default function Catalog({ isDashboardView = false, onCheckoutSuccess }) 
                                 <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400">Failed to load 3D model</span>
                               </div>
                             }>
-                              <LazyGlassesViewer modelPath={getModelFile(modelPath)} />
+                              <LazyGlassesViewer modelPath={getModelFile(modelPath, item)} />
                             </GlassesErrorBoundary>
                           ) : (
                             <img
@@ -653,7 +676,7 @@ export default function Catalog({ isDashboardView = false, onCheckoutSuccess }) 
                 {(() => {
                   const modelPath = getModelPath(selectedProduct);
                   return modelPath ? (
-                    <GlassesViewer modelPath={getModelFile(modelPath)} height="h-full" />
+                    <GlassesViewer modelPath={getModelFile(modelPath, selectedProduct)} height="h-full" />
                   ) : (
                     <img
                       src={getProductImageUrl(selectedProduct.imageUrl)}
