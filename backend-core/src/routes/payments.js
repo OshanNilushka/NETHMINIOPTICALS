@@ -1,106 +1,148 @@
 import express from 'express';
-import crypto from 'crypto';
+import Stripe from 'stripe';
 import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
 
-const MERCHANT_ID     = (process.env.PAYHERE_MERCHANT_ID || '1236588').trim();
-const MERCHANT_SECRET = (process.env.PAYHERE_MERCHANT_SECRET || 'MTk5NzEwOTUzODE1MDA5MTM3NTMxMTgwOTc5NTkwMzY5MzU0NTE2OQ==').trim();
-const NGROK_URL       = (process.env.PAYHERE_NGROK_URL || '').trim();
+const STRIPE_SECRET_KEY = (process.env.STRIPE_SECRET_KEY || '').trim();
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-// ─── Helper: generate MD5 hex ────────────────────────────────────────────────
-const md5 = (str) => crypto.createHash('md5').update(str || '').digest('hex').toUpperCase();
-
-// ─── POST /api/payments/hash ─────────────────────────────────────────────────
-// Called by the frontend before redirecting to PayHere.
-// Returns the HASH and all required form fields to initiate checkout.
-router.post('/hash', async (req, res) => {
+// ─── POST /api/payments/create-checkout-session ──────────────────────────────
+// Initiates a Stripe Checkout session for an order
+router.post('/create-checkout-session', async (req, res) => {
   try {
-    const { orderId, amount, currency = 'LKR' } = req.body;
+    const { orderId, amount, currency = 'lkr', items = [] } = req.body;
 
     if (!orderId || amount === undefined || amount === null) {
       return res.status(400).json({ error: 'orderId and amount are required.' });
     }
 
-    // PayHere hash formula:
-    // MD5( merchant_id + order_id + amount_formatted + currency + MD5(merchant_secret).toUpperCase() )
-    const amountFormatted = parseFloat(amount).toFixed(2);
-    const hashedSecret    = md5(MERCHANT_SECRET);
-    const hash            = md5(`${MERCHANT_ID}${orderId}${amountFormatted}${currency}${hashedSecret}`);
-
     const origin = req.headers.origin || process.env.FRONTEND_URL || 'https://nethminiopticals.vercel.app';
-    const baseUrl = NGROK_URL || process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    const amountInUnits = Math.round(parseFloat(amount) * 100); // Stripe requires amount in smallest currency unit (cents/cents equivalent)
+
+    // Build item description
+    const lineItemTitle = items.length > 0
+      ? `Optical Order #${orderId.slice(-6)} (${items.map(i => i.name || 'Item').slice(0, 2).join(', ')})`
+      : `Nethmini Opticals Order #${orderId.slice(-6)}`;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: currency.toLowerCase(),
+            product_data: {
+              name: lineItemTitle,
+              description: 'Nethmini Opticals Prescription Glasses & Lenses Checkout',
+            },
+            unit_amount: amountInUnits,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${origin}/#/dashboard?payment=success&order_id=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/#/catalog?payment=cancelled`,
+      metadata: {
+        orderId,
+      },
+    });
 
     return res.json({
-      merchant_id:  MERCHANT_ID,
-      order_id:     orderId,
-      amount:       amountFormatted,
-      currency,
-      hash,
-      notify_url:   `${baseUrl}/api/payments/notify`,
-      return_url:   `${origin}/#/dashboard`,
-      cancel_url:   `${origin}/#/catalog`,
-      sandbox:      true,
+      id: session.id,
+      url: session.url,
     });
   } catch (err) {
-    console.error('[PayHere /hash]', err);
-    return res.status(500).json({ error: 'Failed to generate payment hash.' });
+    console.error('[Stripe /create-checkout-session]', err);
+    return res.status(500).json({ error: err.message || 'Failed to create Stripe checkout session.' });
   }
 });
 
-// ─── POST /api/payments/notify ───────────────────────────────────────────────
-// PayHere calls this endpoint server-to-server after every payment.
-// We verify the hash and update the order payment status in the database.
-router.post('/notify', express.urlencoded({ extended: true }), async (req, res) => {
+// ─── POST /api/payments/verify-session ────────────────────────────────────────
+// Frontend calls this when redirected back to verify session status & update DB
+router.post('/verify-session', async (req, res) => {
   try {
-    const {
-      merchant_id,
-      order_id,
-      payhere_amount,
-      payhere_currency,
-      status_code,
-      md5sig,
-    } = req.body;
+    const { sessionId, orderId } = req.body;
 
-    console.log('[PayHere notify]', req.body);
-
-    // Verify the notification hash
-    const hashedSecret     = md5(MERCHANT_SECRET);
-    const expectedSig      = md5(
-      `${merchant_id}${order_id}${payhere_amount}${payhere_currency}${status_code}${hashedSecret}`
-    );
-
-    if (expectedSig !== md5sig) {
-      console.error('[PayHere notify] Hash mismatch! Possible fraud attempt.');
-      return res.sendStatus(400);
+    if (!sessionId && !orderId) {
+      return res.status(400).json({ error: 'sessionId or orderId is required.' });
     }
 
-    // status_code 2 = Payment Success
-    if (status_code === '2') {
-      await prisma.order.update({
-        where: { id: order_id },
-        data:  { paymentStatus: 'PAID', status: 'PROCESSING' },
+    let session = null;
+    let targetOrderId = orderId;
+
+    if (sessionId) {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session && session.metadata && session.metadata.orderId) {
+        targetOrderId = session.metadata.orderId;
+      }
+    }
+
+    if (!targetOrderId) {
+      return res.status(404).json({ error: 'Order ID could not be identified.' });
+    }
+
+    // Check payment status from Stripe session if available
+    const isPaid = session ? session.payment_status === 'paid' : true;
+
+    if (isPaid) {
+      const updatedOrder = await prisma.order.update({
+        where: { id: targetOrderId },
+        data: {
+          paymentStatus: 'PAID',
+          status: 'PROCESSING',
+        },
       });
-      console.log(`[PayHere notify] Order ${order_id} marked as PAID.`);
+      console.log(`[Stripe verify-session] Order ${targetOrderId} marked as PAID.`);
+      return res.json({ status: 'PAID', order: updatedOrder });
+    } else {
+      return res.status(400).json({ status: 'UNPAID', error: 'Payment has not been completed.' });
     }
-
-    // status_code 0  = Pending
-    // status_code -1 = Cancelled
-    // status_code -2 = Failed
-    // status_code -3 = Chargedback
-    if (['-1', '-2', '-3'].includes(status_code)) {
-      await prisma.order.update({
-        where: { id: order_id },
-        data:  { paymentStatus: 'FAILED' },
-      });
-      console.log(`[PayHere notify] Order ${order_id} payment FAILED (code ${status_code}).`);
-    }
-
-    return res.sendStatus(200);
   } catch (err) {
-    console.error('[PayHere notify error]', err);
-    return res.sendStatus(500);
+    console.error('[Stripe /verify-session]', err);
+    return res.status(500).json({ error: 'Failed to verify payment session.' });
   }
+});
+
+// ─── POST /api/payments/webhook ──────────────────────────────────────────────
+// Stripe server-to-server webhook
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    if (webhookSecret && sig) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      // Direct JSON fallback if no webhook secret configured during dev
+      const payload = typeof req.body === 'string' || Buffer.isBuffer(req.body) 
+        ? JSON.parse(req.body.toString()) 
+        : req.body;
+      event = payload;
+    }
+  } catch (err) {
+    console.error('[Stripe Webhook signature verification error]', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle successful checkout
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const orderId = session.metadata?.orderId;
+
+    if (orderId) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'PAID', status: 'PROCESSING' },
+      });
+      console.log(`[Stripe Webhook] Order ${orderId} updated to PAID.`);
+    }
+  }
+
+  return res.json({ received: true });
 });
 
 export default router;
+
