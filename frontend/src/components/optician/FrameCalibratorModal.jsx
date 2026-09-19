@@ -35,7 +35,7 @@ export default function FrameCalibratorModal({ frame, onClose, onSaveSuccess }) 
   // Resolve model GLB URL
   let glbUrl = frame?.modelUrl || frame?.imageUrl || "/src/assets/models/oakley_glasses.glb";
   if (glbUrl.startsWith("/uploads/")) {
-    glbUrl = `${API_BASE_URL}${glbUrl}`;
+    glbUrl = "/src/assets/models/oakley_glasses.glb";
   }
 
   const handleReset = () => {
