@@ -62,7 +62,9 @@ router.post('/', authMiddleware, async (req, res) => {
     const { rating, comment, frameId } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Rating must be between 1 and 5 stars.' });
+      return res
+        .status(400)
+        .json({ error: 'Rating must be between 1 and 5 stars.' });
     }
 
     if (!comment || !comment.trim()) {
@@ -93,12 +95,15 @@ router.post('/', authMiddleware, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Feedback submitted successfully. It will be displayed after optician review.',
+      message:
+        'Feedback submitted successfully. It will be displayed after optician review.',
       review: newReview,
     });
   } catch (error) {
     console.error('Error creating review:', error);
-    res.status(500).json({ error: error.message || 'Failed to submit feedback.' });
+    res
+      .status(500)
+      .json({ error: error.message || 'Failed to submit feedback.' });
   }
 });
 
@@ -107,7 +112,9 @@ router.get('/all', authMiddleware, async (req, res) => {
   try {
     const role = req.user.role;
     if (role !== 'OPTICIAN' && role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Optician or Admin privileges required.' });
+      return res.status(403).json({
+        error: 'Access denied. Optician or Admin privileges required.',
+      });
     }
 
     const { status } = req.query;
@@ -143,14 +150,18 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
   try {
     const role = req.user.role;
     if (role !== 'OPTICIAN' && role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Optician or Admin privileges required.' });
+      return res.status(403).json({
+        error: 'Access denied. Optician or Admin privileges required.',
+      });
     }
 
     const { id } = req.params;
     const { status } = req.body;
 
     if (!['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status. Must be APPROVED, REJECTED, or PENDING.' });
+      return res.status(400).json({
+        error: 'Invalid status. Must be APPROVED, REJECTED, or PENDING.',
+      });
     }
 
     const updatedReview = await prisma.review.update({
@@ -191,7 +202,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 
     if (req.user.role === 'PATIENT' && review.patientId !== req.user.id) {
-      return res.status(403).json({ error: 'Unauthorized to delete this review.' });
+      return res
+        .status(403)
+        .json({ error: 'Unauthorized to delete this review.' });
     }
 
     await prisma.review.delete({

@@ -10,7 +10,9 @@ router.post('/', async (req, res) => {
     const { firstName, lastName, email, phoneNumber, message } = req.body;
 
     if (!firstName || !lastName || !email || !message) {
-      return res.status(400).json({ error: 'First name, last name, email, and message are required.' });
+      return res.status(400).json({
+        error: 'First name, last name, email, and message are required.',
+      });
     }
 
     const contactMessage = await prisma.contactMessage.create({
@@ -37,7 +39,9 @@ router.post('/', async (req, res) => {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'OPTICIAN' && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Optician or Admin privileges required.' });
+      return res.status(403).json({
+        error: 'Access denied. Optician or Admin privileges required.',
+      });
     }
 
     const messages = await prisma.contactMessage.findMany({
@@ -55,7 +59,9 @@ router.get('/', authMiddleware, async (req, res) => {
 router.put('/:id/read', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'OPTICIAN' && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Optician or Admin privileges required.' });
+      return res.status(403).json({
+        error: 'Access denied. Optician or Admin privileges required.',
+      });
     }
 
     const { id } = req.params;
@@ -75,7 +81,9 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'OPTICIAN' && req.user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Optician or Admin privileges required.' });
+      return res.status(403).json({
+        error: 'Access denied. Optician or Admin privileges required.',
+      });
     }
 
     const { id } = req.params;
@@ -83,7 +91,10 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       where: { id },
     });
 
-    res.json({ success: true, message: 'Contact message deleted successfully.' });
+    res.json({
+      success: true,
+      message: 'Contact message deleted successfully.',
+    });
   } catch (error) {
     console.error('Error deleting contact message:', error);
     res.status(500).json({ error: 'Failed to delete contact message.' });

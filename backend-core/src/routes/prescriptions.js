@@ -7,7 +7,6 @@ import { Jimp } from 'jimp';
 import Tesseract from 'tesseract.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-
 const router = express.Router();
 
 // GET /api/prescriptions/patients
@@ -175,8 +174,18 @@ router.get('/', async (req, res) => {
 // Optician/Admin validates or rejects a prescription
 router.put('/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status, odSph, odCyl, odAxis, osSph, osCyl, osAxis, pd, odAdd, rejectionReason } =
-    req.body;
+  const {
+    status,
+    odSph,
+    odCyl,
+    odAxis,
+    osSph,
+    osCyl,
+    osAxis,
+    pd,
+    odAdd,
+    rejectionReason,
+  } = req.body;
   const { role, id: opticianId } = req.user;
 
   if (role !== 'OPTICIAN' && role !== 'ADMIN') {
@@ -209,7 +218,7 @@ router.put('/:id/status', async (req, res) => {
         status,
         isValidated: status === 'VALIDATED',
         opticianId,
-        rejectionReason: status === 'REJECTED' ? (rejectionReason || null) : null,
+        rejectionReason: status === 'REJECTED' ? rejectionReason || null : null,
         ...(odSph !== undefined && {
           odSph: odSph !== null && odSph !== '' ? parseFloat(odSph) : null,
         }),
@@ -344,14 +353,25 @@ router.post(
       }
 
       const imageBuffer = fs.readFileSync(fullPath);
-      const ext = path.extname(req.file.originalname).toLowerCase().replace('.', '');
-      const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      const ext = path
+        .extname(req.file.originalname)
+        .toLowerCase()
+        .replace('.', '');
+      const mimeType =
+        ext === 'png'
+          ? 'image/png'
+          : ext === 'webp'
+            ? 'image/webp'
+            : 'image/jpeg';
       const base64Image = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
 
       // 0. Primary AI Vision Attempt: Gemini AI Multimodal (If API Key Present)
-      const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+      const geminiApiKey =
+        process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       if (geminiApiKey) {
-        console.log('Attempting high-precision Gemini AI Multimodal Vision extraction...');
+        console.log(
+          'Attempting high-precision Gemini AI Multimodal Vision extraction...',
+        );
         try {
           const genAI = new GoogleGenerativeAI(geminiApiKey);
           const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -384,7 +404,10 @@ Rules:
           console.log('--- GEMINI AI VISION RESPONSE ---');
           console.log(responseText);
 
-          const cleanJsonStr = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const cleanJsonStr = responseText
+            .replace(/```json/gi, '')
+            .replace(/```/g, '')
+            .trim();
           const parsedAi = JSON.parse(cleanJsonStr);
 
           parsedAi.rawOcrResult = responseText;
@@ -392,7 +415,10 @@ Rules:
 
           return res.json(parsedAi);
         } catch (geminiErr) {
-          console.warn('Gemini AI Vision skipped/failed, falling back to OCR:', geminiErr.message);
+          console.warn(
+            'Gemini AI Vision skipped/failed, falling back to OCR:',
+            geminiErr.message,
+          );
         }
       }
 
@@ -455,11 +481,18 @@ Rules:
           ocrData = await callOcrSpace('1');
         }
 
-        if (ocrData && ocrData.OCRExitCode === 1 && ocrData.ParsedResults?.[0]?.ParsedText) {
+        if (
+          ocrData &&
+          ocrData.OCRExitCode === 1 &&
+          ocrData.ParsedResults?.[0]?.ParsedText
+        ) {
           rawText = ocrData.ParsedResults[0].ParsedText;
           console.log('--- OCR.SPACE TEXT RECEIVED ---');
         } else {
-          console.warn('OCR.space API unavailable or throttled:', JSON.stringify(ocrData));
+          console.warn(
+            'OCR.space API unavailable or throttled:',
+            JSON.stringify(ocrData),
+          );
         }
       } catch (ocrErr) {
         console.warn('OCR.space network call failed:', ocrErr.message);
@@ -478,7 +511,9 @@ Rules:
       }
 
       if (!rawText || !rawText.trim()) {
-        throw new Error('Unable to extract text from prescription. Please ensure the image is clear and well-lit.');
+        throw new Error(
+          'Unable to extract text from prescription. Please ensure the image is clear and well-lit.',
+        );
       }
 
       console.log('--- RAW OCR TEXT START ---');
@@ -530,11 +565,14 @@ function parsePrescriptionText(rawText) {
   // Helper to extract numbers with signs (+ / -) or decimals
   const parseNumbers = (str) => {
     // Strip line index prefixes like "1." or "2." at start of line
-    const sanitized = str.replace(/^\s*\d+[\.\)]\s*/, '');
+    const sanitized = str.replace(/^\s*\d+[.)]\s*/, '');
 
     // Replace optical label words (sph, cyl, axis, add, ds, dc, deg, mm, etc.)
     const numPart = sanitized
-      .replace(/\b(sph|cyl|axis|add|ds|dc|deg|dp|mm|right|left|eye|od|os)\b/gi, ' ')
+      .replace(
+        /\b(sph|cyl|axis|add|ds|dc|deg|dp|mm|right|left|eye|od|os)\b/gi,
+        ' ',
+      )
       .replace(/[x@,/]/g, ' ');
 
     const matches = numPart.match(/[-+]?\d+(?:\.\d+)?/g) || [];
@@ -547,7 +585,11 @@ function parsePrescriptionText(rawText) {
       return String(Math.round(Math.abs(num)));
     }
     // Handle OCR missing decimal point (e.g. 250 -> 2.50)
-    if (Math.abs(num) >= 100 && Math.abs(num) <= 2500 && Math.floor(num) === num) {
+    if (
+      Math.abs(num) >= 100 &&
+      Math.abs(num) <= 2500 &&
+      Math.floor(num) === num
+    ) {
       num = num / 100;
     }
     const str = num.toFixed(2);
@@ -594,7 +636,12 @@ function parsePrescriptionText(rawText) {
     const numericLines = [];
     for (const line of lines) {
       const lower = line.toLowerCase();
-      if (lower.includes('pd') || lower.includes('date') || lower.includes('dr.')) continue;
+      if (
+        lower.includes('pd') ||
+        lower.includes('date') ||
+        lower.includes('dr.')
+      )
+        continue;
       const nums = parseNumbers(line);
       if (nums.length >= 1 && nums.some((n) => Math.abs(n) <= 25)) {
         numericLines.push(nums);
@@ -618,7 +665,11 @@ function parsePrescriptionText(rawText) {
   // Extract Pupillary Distance (PD)
   for (const line of lines) {
     const lower = line.toLowerCase();
-    if (lower.includes('pd') || lower.includes('pupil') || lower.includes('dist')) {
+    if (
+      lower.includes('pd') ||
+      lower.includes('pupil') ||
+      lower.includes('dist')
+    ) {
       const nums = parseNumbers(line).filter((n) => n >= 40 && n <= 85);
       if (nums.length > 0) result.pd = String(Math.round(nums[0]));
     }
@@ -627,10 +678,24 @@ function parsePrescriptionText(rawText) {
   // Extract Doctor & Date
   for (const line of lines) {
     const lower = line.toLowerCase();
-    if (lower.includes('dr') || lower.includes('doctor') || lower.includes('optometrist') || lower.includes('prescribed')) {
-      const docLabelMatch = line.match(/(?:doctor(?:\s+name)?|optometrist|prescribed\s+by)\s*[:\-]\s*(?:dr\.?\s*)?([a-z\s.]+)/i);
-      if (docLabelMatch && docLabelMatch[1] && docLabelMatch[1].trim() && docLabelMatch[1].trim().toLowerCase() !== 'name') {
-        let name = docLabelMatch[1].trim().replace(/\b[a-z]/g, (l) => l.toUpperCase());
+    if (
+      lower.includes('dr') ||
+      lower.includes('doctor') ||
+      lower.includes('optometrist') ||
+      lower.includes('prescribed')
+    ) {
+      const docLabelMatch = line.match(
+        /(?:doctor(?:\s+name)?|optometrist|prescribed\s+by)\s*[:-]\s*(?:dr\.?\s*)?([a-z\s.]+)/i,
+      );
+      if (
+        docLabelMatch &&
+        docLabelMatch[1] &&
+        docLabelMatch[1].trim() &&
+        docLabelMatch[1].trim().toLowerCase() !== 'name'
+      ) {
+        let name = docLabelMatch[1]
+          .trim()
+          .replace(/\b[a-z]/g, (l) => l.toUpperCase());
         if (!name.toLowerCase().startsWith('dr')) {
           name = 'Dr. ' + name;
         }
@@ -639,14 +704,17 @@ function parsePrescriptionText(rawText) {
       }
       const drMatch = line.match(/\b(?:dr\.?)\s+([a-z\s.]+)/i);
       if (drMatch && drMatch[1]) {
-        let name = drMatch[1].trim().replace(/\b[a-z]/g, (l) => l.toUpperCase());
+        let name = drMatch[1]
+          .trim()
+          .replace(/\b[a-z]/g, (l) => l.toUpperCase());
         result.doctor = 'Dr. ' + name;
         break;
       }
     }
     if (lower.includes('date')) {
       const match =
-        line.match(/\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/) || line.match(/\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}/);
+        line.match(/\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/) ||
+        line.match(/\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}/);
       if (match) result.date = match[0];
     }
   }
@@ -665,11 +733,15 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!prescription) {
-      return res.status(404).json({ error: `Prescription with ID ${id} not found.` });
+      return res
+        .status(404)
+        .json({ error: `Prescription with ID ${id} not found.` });
     }
 
     if (req.user.role === 'PATIENT' && prescription.patientId !== req.user.id) {
-      return res.status(403).json({ error: 'Unauthorized to delete this prescription.' });
+      return res
+        .status(403)
+        .json({ error: 'Unauthorized to delete this prescription.' });
     }
 
     await prisma.$transaction(async (tx) => {

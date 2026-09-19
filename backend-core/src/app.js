@@ -32,10 +32,13 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Serve static uploaded files with 7-day browser caching
-app.use('/uploads', express.static('public/uploads', {
-  maxAge: '7d',
-  etag: true,
-}));
+app.use(
+  '/uploads',
+  express.static('public/uploads', {
+    maxAge: '7d',
+    etag: true,
+  }),
+);
 
 // Auth routes
 app.use('/api/auth', authRouter);

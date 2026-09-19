@@ -220,7 +220,7 @@ export default function RevenueReports() {
                   methodLabel = "💳 CARD";
                   if (isPaid) {
                     badgeCls = "bg-green-50 text-green-700 border-green-200";
-                    actionText = "✓ Verified (Stripe)";
+                    actionText = "✓ Verified (PayHere)";
                   } else if (isFailed) {
                     badgeCls = "bg-red-50 text-red-700 border-red-200";
                     actionText = "✗ Payment Failed";

@@ -115,12 +115,51 @@ router.get('/recommendations', async (req, res) => {
 });
 
 const REAL_OPTICAL_LENSES = [
-  { type: "Lens 1 - BlueCut Precision Optical Lens", brand: "Essilor Crizal", price: 8500.0, stockLevel: 60, description: "UV420 Blue-light blocker with ultra-clear anti-glare coating" },
-  { type: "Crizal Anti-Reflective Hydrophobic Lens", brand: "Essilor", price: 6500.0, stockLevel: 50, description: "Hydrophobic, smudge-resistant anti-glare coating" },
-  { type: "Essilor Transitions Gen 8 Photochromic Lens", brand: "Essilor", price: 14000.0, stockLevel: 40, description: "Auto-darkening UV responsive light intelligent lenses" },
-  { type: "Carl Zeiss Progressive Digital HD Lens", brand: "Carl Zeiss", price: 18500.0, stockLevel: 30, description: "Precision progressive multi-focal lens for smooth distance to near vision" },
-  { type: "1.67 Ultra-Thin High-Index Lens", brand: "Hoya", price: 11500.0, stockLevel: 45, description: "High-index ultra slim lightweight lens for higher prescription powers" },
-  { type: "Standard Hard-Coated Scratch Resistant Lens", brand: "Standard", price: 3500.0, stockLevel: 100, description: "Durable daily optical lens with scratch resistant hard coating" }
+  {
+    type: 'Lens 1 - BlueCut Precision Optical Lens',
+    brand: 'Essilor Crizal',
+    price: 8500.0,
+    stockLevel: 60,
+    description: 'UV420 Blue-light blocker with ultra-clear anti-glare coating',
+  },
+  {
+    type: 'Crizal Anti-Reflective Hydrophobic Lens',
+    brand: 'Essilor',
+    price: 6500.0,
+    stockLevel: 50,
+    description: 'Hydrophobic, smudge-resistant anti-glare coating',
+  },
+  {
+    type: 'Essilor Transitions Gen 8 Photochromic Lens',
+    brand: 'Essilor',
+    price: 14000.0,
+    stockLevel: 40,
+    description: 'Auto-darkening UV responsive light intelligent lenses',
+  },
+  {
+    type: 'Carl Zeiss Progressive Digital HD Lens',
+    brand: 'Carl Zeiss',
+    price: 18500.0,
+    stockLevel: 30,
+    description:
+      'Precision progressive multi-focal lens for smooth distance to near vision',
+  },
+  {
+    type: '1.67 Ultra-Thin High-Index Lens',
+    brand: 'Hoya',
+    price: 11500.0,
+    stockLevel: 45,
+    description:
+      'High-index ultra slim lightweight lens for higher prescription powers',
+  },
+  {
+    type: 'Standard Hard-Coated Scratch Resistant Lens',
+    brand: 'Standard',
+    price: 3500.0,
+    stockLevel: 100,
+    description:
+      'Durable daily optical lens with scratch resistant hard coating',
+  },
 ];
 
 let isLensesSeeded = false;
@@ -133,7 +172,9 @@ async function ensureLensesSeeded() {
     const existing = await prisma.lens.count();
     if (existing < REAL_OPTICAL_LENSES.length) {
       for (const lensData of REAL_OPTICAL_LENSES) {
-        const found = await prisma.lens.findFirst({ where: { type: lensData.type } });
+        const found = await prisma.lens.findFirst({
+          where: { type: lensData.type },
+        });
         if (!found) {
           await prisma.lens.create({ data: lensData }).catch(() => {});
         }
@@ -141,7 +182,7 @@ async function ensureLensesSeeded() {
     }
     isLensesSeeded = true;
   } catch (e) {
-    console.warn("Lens seeding notice:", e.message);
+    console.warn('Lens seeding notice:', e.message);
   }
 }
 
@@ -149,10 +190,14 @@ async function ensureLensesSeeded() {
 async function ensureProductLensesSeeded() {
   if (isProductLensesSeeded) return;
   try {
-    const count = await prisma.product.count({ where: { imageUrl: { startsWith: '/lenses/' } } });
+    const count = await prisma.product.count({
+      where: { imageUrl: { startsWith: '/lenses/' } },
+    });
     if (count < LENSES_CATALOG.length) {
       for (const lensItem of LENSES_CATALOG) {
-        const found = await prisma.product.findFirst({ where: { name: lensItem.name } });
+        const found = await prisma.product.findFirst({
+          where: { name: lensItem.name },
+        });
         if (!found) {
           await prisma.product.create({ data: lensItem }).catch(() => {});
         }
@@ -160,7 +205,7 @@ async function ensureProductLensesSeeded() {
     }
     isProductLensesSeeded = true;
   } catch (e) {
-    console.warn("Product lenses seed notice:", e.message);
+    console.warn('Product lenses seed notice:', e.message);
   }
 }
 
@@ -180,95 +225,95 @@ router.get('/lenses', async (req, res) => {
 
 const LENSES_CATALOG = [
   {
-    name: "Air Optix Night & Day Aqua Contact Lenses",
-    brand: "Air Optix",
-    material: "Silicone Hydrogel",
+    name: 'Air Optix Night & Day Aqua Contact Lenses',
+    brand: 'Air Optix',
+    material: 'Silicone Hydrogel',
     price: 12500.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 45,
-    imageUrl: "/lenses/Air Optix Night & Day Aqua Contact Lenses.png"
+    imageUrl: '/lenses/Air Optix Night & Day Aqua Contact Lenses.png',
   },
   {
-    name: "Biofinity Toric Contact Lenses",
-    brand: "Biofinity",
-    material: "Comfilcon A (Aquaform)",
+    name: 'Biofinity Toric Contact Lenses',
+    brand: 'Biofinity',
+    material: 'Comfilcon A (Aquaform)',
     price: 14200.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 35,
-    imageUrl: "/lenses/Biofinity Toric Contact Lenses.png"
+    imageUrl: '/lenses/Biofinity Toric Contact Lenses.png',
   },
   {
-    name: "Dailies AquaComfort Plus Contact Lenses",
-    brand: "Dailies",
-    material: "Nelfilcon A",
+    name: 'Dailies AquaComfort Plus Contact Lenses',
+    brand: 'Dailies',
+    material: 'Nelfilcon A',
     price: 11800.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 50,
-    imageUrl: "/lenses/Dailies AquaComfort Plus Contact Lenses.png"
+    imageUrl: '/lenses/Dailies AquaComfort Plus Contact Lenses.png',
   },
   {
-    name: "Dailies Total 1 Contact Lenses",
-    brand: "Alcon",
-    material: "Delefilcon A Water Gradient",
+    name: 'Dailies Total 1 Contact Lenses',
+    brand: 'Alcon',
+    material: 'Delefilcon A Water Gradient',
     price: 16500.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 40,
-    imageUrl: "/lenses/Dailies Total 1 Contact Lenses.png"
+    imageUrl: '/lenses/Dailies Total 1 Contact Lenses.png',
   },
   {
-    name: "INFUSE One-Day Contact Lenses",
-    brand: "Bausch + Lomb",
-    material: "Kalifilcon A (ProBalance)",
+    name: 'INFUSE One-Day Contact Lenses',
+    brand: 'Bausch + Lomb',
+    material: 'Kalifilcon A (ProBalance)',
     price: 15500.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 30,
-    imageUrl: "/lenses/INFUSE One-Day Contact Lenses.png"
+    imageUrl: '/lenses/INFUSE One-Day Contact Lenses.png',
   },
   {
-    name: "Lens 1",
-    brand: "Essilor Crizal",
-    material: "1.61 High-Index Polycarbonate",
+    name: 'Lens 1',
+    brand: 'Essilor Crizal',
+    material: '1.61 High-Index Polycarbonate',
     price: 8500.0,
-    shape: "Optical Lens",
-    gender: "UNISEX",
+    shape: 'Optical Lens',
+    gender: 'UNISEX',
     stockLevel: 60,
-    imageUrl: "/lenses/Lens 1.png"
+    imageUrl: '/lenses/Lens 1.png',
   },
   {
-    name: "Precision1 Contact Lenses",
-    brand: "Precision1",
-    material: "Verofilcon A (SMARTSURFACE)",
+    name: 'Precision1 Contact Lenses',
+    brand: 'Precision1',
+    material: 'Verofilcon A (SMARTSURFACE)',
     price: 13500.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 40,
-    imageUrl: "/lenses/Precision1 Contact Lenses.png"
+    imageUrl: '/lenses/Precision1 Contact Lenses.png',
   },
   {
-    name: "Total30 Contact Lenses",
-    brand: "Total30",
-    material: "Lehfilcon A Biomimetic",
+    name: 'Total30 Contact Lenses',
+    brand: 'Total30',
+    material: 'Lehfilcon A Biomimetic',
     price: 14800.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 30,
-    imageUrl: "/lenses/Total30 Contact Lenses.png"
+    imageUrl: '/lenses/Total30 Contact Lenses.png',
   },
   {
-    name: "ULTRA for Presbyopia Contact Lenses",
-    brand: "Bausch + Lomb",
-    material: "Samfilcon A (MoistureSeal)",
+    name: 'ULTRA for Presbyopia Contact Lenses',
+    brand: 'Bausch + Lomb',
+    material: 'Samfilcon A (MoistureSeal)',
     price: 17200.0,
-    shape: "Contact Lens",
-    gender: "UNISEX",
+    shape: 'Contact Lens',
+    gender: 'UNISEX',
     stockLevel: 25,
-    imageUrl: "/lenses/ULTRA for Presbyopia Contact Lenses.png"
-  }
+    imageUrl: '/lenses/ULTRA for Presbyopia Contact Lenses.png',
+  },
 ];
 
 // GET /api/products
@@ -440,24 +485,40 @@ router.put('/:id/calibration', authMiddleware, async (req, res) => {
   }
 
   const { id } = req.params;
-  const { scaleMultiplier, xOffset, yOffset, zOffset, rotationX, rotationY, rotationZ } = req.body;
+  const {
+    scaleMultiplier,
+    xOffset,
+    yOffset,
+    zOffset,
+    rotationX,
+    rotationY,
+    rotationZ,
+  } = req.body;
 
   try {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) {
-      return res.status(404).json({ error: `Product with ID ${id} not found.` });
+      return res
+        .status(404)
+        .json({ error: `Product with ID ${id} not found.` });
     }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        scaleMultiplier: scaleMultiplier !== undefined ? parseFloat(scaleMultiplier) : product.scaleMultiplier,
+        scaleMultiplier:
+          scaleMultiplier !== undefined
+            ? parseFloat(scaleMultiplier)
+            : product.scaleMultiplier,
         xOffset: xOffset !== undefined ? parseFloat(xOffset) : product.xOffset,
         yOffset: yOffset !== undefined ? parseFloat(yOffset) : product.yOffset,
         zOffset: zOffset !== undefined ? parseFloat(zOffset) : product.zOffset,
-        rotationX: rotationX !== undefined ? parseFloat(rotationX) : product.rotationX,
-        rotationY: rotationY !== undefined ? parseFloat(rotationY) : product.rotationY,
-        rotationZ: rotationZ !== undefined ? parseFloat(rotationZ) : product.rotationZ,
+        rotationX:
+          rotationX !== undefined ? parseFloat(rotationX) : product.rotationX,
+        rotationY:
+          rotationY !== undefined ? parseFloat(rotationY) : product.rotationY,
+        rotationZ:
+          rotationZ !== undefined ? parseFloat(rotationZ) : product.rotationZ,
       },
     });
 
