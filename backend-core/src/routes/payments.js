@@ -4,10 +4,10 @@ import { prisma } from '../lib/prisma.js';
 
 const router = express.Router();
 
-const MERCHANT_ID = (process.env.PAYHERE_MERCHANT_ID || '1236588').trim();
+const MERCHANT_ID = (process.env.PAYHERE_MERCHANT_ID || '1238031').trim();
 const MERCHANT_SECRET = (
   process.env.PAYHERE_MERCHANT_SECRET ||
-  'MTk5NzEwOTUzODE1MDA5MTM3NTMxMTgwOTc5NTkwMzY5MzU0NTE2OQ=='
+  'MTM1MzYzNjgxNzM5NjUzMjUzNTYyNjY2MDkwMDQ1MjA1Njk0NzgxMA=='
 ).trim();
 const NGROK_URL = (process.env.PAYHERE_NGROK_URL || '').trim();
 
