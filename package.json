@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "cd backend-core && npm install && npx prisma generate",
-    "start": "cd backend-core && node src/main.js"
+    "postinstall": "npm --prefix backend-core install && npm --prefix backend-core run postinstall",
+    "start": "node backend-core/src/main.js"
   }
 }
