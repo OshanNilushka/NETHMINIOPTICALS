@@ -166,9 +166,9 @@ export default function CheckoutCustomizerModal({
 
       const order = await response.json();
 
-      // Step 2: Handle Online Card Payment (PayHere Sandbox)
+      // Step 2: Handle Online Card Payment (Stripe Checkout)
       if (paymentMethod === "CARD") {
-        const payRes = await fetch(`${API_BASE_URL}/api/payments/hash`, {
+        const payRes = await fetch(`${API_BASE_URL}/api/payments/create-checkout-session`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -177,52 +177,27 @@ export default function CheckoutCustomizerModal({
           body: JSON.stringify({
             orderId: order.id,
             amount: grandTotal,
-            currency: "LKR"
+            currency: "LKR",
+            items: cart,
           })
         });
 
         if (!payRes.ok) {
           const errBody = await payRes.json().catch(() => ({}));
-          throw new Error(errBody.error || "Could not initialize PayHere payment gateway.");
+          throw new Error(errBody.error || "Could not initialize Stripe payment checkout session.");
         }
 
         const payData = await payRes.json();
 
-        // Submit form directly to PayHere Sandbox
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = "https://sandbox.payhere.lk/pay/checkout";
-
-        const fields = {
-          merchant_id: payData.merchant_id,
-          return_url: payData.return_url,
-          cancel_url: payData.cancel_url,
-          notify_url: payData.notify_url,
-          order_id: payData.order_id,
-          items: cart.map(i => i.name || "Optical Item").join(", "),
-          currency: payData.currency,
-          amount: payData.amount,
-          first_name: recipientName.split(" ")[0] || recipientName,
-          last_name: recipientName.split(" ").slice(1).join(" ") || ".",
-          email: localStorage.getItem("user_email") || "customer@insightopticals.lk",
-          phone: recipientPhone,
-          address: shippingAddress,
-          city: "Colombo",
-          country: "Sri Lanka",
-          hash: payData.hash,
-        };
-
-        Object.entries(fields).forEach(([key, value]) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = key;
-          input.value = value;
-          form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-        return;
+        if (onClearCart) onClearCart();
+        
+        // Redirect user to Stripe hosted checkout page
+        if (payData.url) {
+          window.location.href = payData.url;
+          return;
+        } else {
+          throw new Error("Invalid payment URL returned from server.");
+        }
       }
 
       // Step 3: Cash on Delivery (COD) Success
@@ -520,8 +495,8 @@ export default function CheckoutCustomizerModal({
                 />
                 <CreditCard className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Pay Online (PayHere Card)</p>
-                  <p className="text-[10px] text-slate-500">Visa, MasterCard, Amex via PayHere</p>
+                  <p className="text-xs font-bold text-slate-900">Pay Online (Stripe Card)</p>
+                  <p className="text-[10px] text-slate-500">Visa, MasterCard, Amex via Stripe</p>
                 </div>
               </label>
             </div>

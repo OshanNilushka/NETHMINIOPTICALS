@@ -313,6 +313,30 @@ export default function CustomerDashboard() {
     fetchProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
+
+    // Check Stripe checkout redirect payment verification
+    const hashStr = window.location.hash || "";
+    if (hashStr.includes("payment=success")) {
+      const urlParams = new URLSearchParams(hashStr.split("?")[1] || "");
+      const sessionId = urlParams.get("session_id");
+      const orderId = urlParams.get("order_id");
+
+      if (sessionId || orderId) {
+        fetch(`${API_BASE_URL}/api/payments/verify-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, orderId }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "PAID") {
+              fetchProfile(); // Reload profile & orders to show updated status
+            }
+          })
+          .catch((err) => console.error("Payment verification error:", err));
+      }
+    }
+
     const interval = setInterval(fetchNotifications, 10000); // Poll every 10 seconds
     return () => clearInterval(interval);
   }, []);

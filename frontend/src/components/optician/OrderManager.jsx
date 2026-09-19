@@ -536,13 +536,13 @@ export default function OrderManager() {
                       <option value="PAID">✅ PAID</option>
                       <option value="FAILED">❌ FAILED</option>
                     </select>
-                    {/* PayHere lock notice */}
+                    {/* Stripe lock notice */}
                     {selected.paymentMethod === "CARD" && selected.paymentStatus === "PAID" && (
                       <div className="mt-2.5 flex items-center gap-3 bg-emerald-600 text-white rounded-xl px-5 py-4 shadow-md shadow-emerald-500/20">
                         <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                         <div>
-                          <p className="text-sm font-extrabold uppercase tracking-wide">Confirmed by PayHere</p>
-                          <p className="text-xs font-semibold opacity-85 mt-0.5">This payment was verified by the gateway and cannot be changed.</p>
+                          <p className="text-sm font-extrabold uppercase tracking-wide">Confirmed by Stripe</p>
+                          <p className="text-xs font-semibold opacity-85 mt-0.5">This payment was verified by Stripe gateway and cannot be changed.</p>
                         </div>
                       </div>
                     )}
