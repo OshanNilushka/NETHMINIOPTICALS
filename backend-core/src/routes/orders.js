@@ -62,7 +62,18 @@ router.get('/', async (req, res) => {
 // POST /api/orders
 // Place a new order with nested order items
 router.post('/', async (req, res) => {
-  let { items, frameId, lensId, quantity = 1, prescriptionId, shippingAddress, recipientName, recipientPhone, shippingCost = 0.0, paymentMethod = 'COD' } = req.body;
+  let {
+    items,
+    frameId,
+    lensId,
+    quantity = 1,
+    prescriptionId,
+    shippingAddress,
+    recipientName,
+    recipientPhone,
+    shippingCost = 0.0,
+    paymentMethod = 'COD',
+  } = req.body;
 
   let patientId = req.user.id;
   const isOpticianOrAdmin =
@@ -78,9 +89,7 @@ router.post('/', async (req, res) => {
   }
 
   if (!items || !Array.isArray(items) || items.length === 0) {
-    return res
-      .status(400)
-      .json({ error: 'Order items are required.' });
+    return res.status(400).json({ error: 'Order items are required.' });
   }
 
   try {
@@ -92,9 +101,9 @@ router.post('/', async (req, res) => {
       const { frameId: fId, lensId: lId, quantity: qty = 1 } = item;
 
       if (!fId) {
-        return res
-          .status(400)
-          .json({ error: 'Frame product ID (frameId) is required for each item.' });
+        return res.status(400).json({
+          error: 'Frame product ID (frameId) is required for each item.',
+        });
       }
 
       // Verify frame product exists and check stock
@@ -329,7 +338,15 @@ router.delete('/:id', async (req, res) => {
 // Update order details (Optician / Admin only)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { status, shippingAddress, recipientName, recipientPhone, courierName, trackingNumber, paymentStatus } = req.body;
+  const {
+    status,
+    shippingAddress,
+    recipientName,
+    recipientPhone,
+    courierName,
+    trackingNumber,
+    paymentStatus,
+  } = req.body;
   const userRole = req.user.role;
 
   if (userRole !== 'OPTICIAN' && userRole !== 'ADMIN') {
@@ -372,9 +389,7 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating order:', error);
-    res
-      .status(500)
-      .json({ error: 'Server error processing order update.' });
+    res.status(500).json({ error: 'Server error processing order update.' });
   }
 });
 
@@ -384,7 +399,8 @@ router.post('/notify-pickup', async (req, res) => {
   const userRole = req.user.role;
   if (userRole !== 'OPTICIAN' && userRole !== 'ADMIN') {
     return res.status(403).json({
-      error: 'Unauthorized. Only opticians and admins can trigger notifications.',
+      error:
+        'Unauthorized. Only opticians and admins can trigger notifications.',
     });
   }
 
@@ -403,8 +419,8 @@ router.post('/notify-pickup', async (req, res) => {
       include: {
         patient: true,
         items: {
-          include: { frame: true, lens: true }
-        }
+          include: { frame: true, lens: true },
+        },
       },
     });
 
@@ -425,7 +441,9 @@ router.post('/notify-pickup', async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending pickup notifications:', error);
-    res.status(500).json({ error: 'Server error sending pickup notifications.' });
+    res
+      .status(500)
+      .json({ error: 'Server error sending pickup notifications.' });
   }
 });
 
@@ -492,7 +510,9 @@ async function sendOrderStatusEmail(order, patient, status) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL SENT] Order status email sent to ${patient.email} for status ${status}`);
+    console.log(
+      `[EMAIL SENT] Order status email sent to ${patient.email} for status ${status}`,
+    );
   } catch (error) {
     console.error('Error sending order status email:', error);
   }
