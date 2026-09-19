@@ -1,0 +1,9 @@
+{
+  "name": "nethminiopticals-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm --prefix backend-core install",
+    "start": "npm --prefix backend-core start"
+  }
+}
