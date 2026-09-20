@@ -25,84 +25,21 @@ class GlassesErrorBoundary extends React.Component {
   }
 }
 
-// Import the 3D model assets
-import glassesModel from '../assets/models/glasses.glb';
-import blackGlassesModel from '../assets/models/black_glasses.glb';
-import metalRoundModel from '../assets/models/metal_round_glasses.glb';
-import rayBanModel from '../assets/models/ray_ban_glasses.glb';
-import oakleyModel from '../assets/models/oakley_glasses.glb';
-import glasses2Model from '../assets/models/glasses_2.glb';
-import glasses08Model from '../assets/models/glasses_08.glb';
-import glasses09Model from '../assets/models/glasses_09.glb';
-import cartoonGlassesModel from '../assets/models/cartoon_glasses.glb';
-import glasses12Model from '../assets/models/glasses (12).glb';
-import glasses13Model from '../assets/models/glasses (13).glb';
-import sunGlassesModel from '../assets/models/sun_glasses.glb';
-
-// Maps backend image URLs/model keys to imported Vite assets
-const MODEL_MAP = {
-  "/src/assets/ray_ban_glasses.glb": rayBanModel,
-  "/src/assets/oakley_glasses.glb": oakleyModel,
-  "/src/assets/metal_round_glasses.glb": metalRoundModel,
-  "/src/assets/cartoon_glasses.glb": cartoonGlassesModel,
-  "glasses.glb": glassesModel,
-  "black_glasses.glb": blackGlassesModel,
-  "metal_round_glasses.glb": metalRoundModel,
-  "ray_ban_glasses.glb": rayBanModel,
-  "oakley_glasses.glb": oakleyModel,
-  "glasses_2.glb": glasses2Model,
-  "glasses_08.glb": glasses08Model,
-  "glasses_09.glb": glasses09Model,
-  "cartoon_glasses.glb": cartoonGlassesModel,
-  "glasses (12).glb": glasses12Model,
-  "glasses (13).glb": glasses13Model,
-  "sun_glasses.glb": sunGlassesModel,
-};
-
-const FALLBACK_MODELS = [
-  glassesModel,
-  rayBanModel,
-  oakleyModel,
-  metalRoundModel,
-  blackGlassesModel,
-  sunGlassesModel,
-  cartoonGlassesModel,
-  glasses2Model,
-  glasses08Model,
-  glasses09Model,
-  glasses12Model,
-  glasses13Model
-];
+// Import model resolver utility
+import { resolveModelUrl, MODEL_MAP } from '../utils/modelResolver';
 
 const getModelFile = (url, item) => {
-  if (!url) return glassesModel;
-  if (MODEL_MAP[url]) return MODEL_MAP[url];
-
-  const filename = url.substring(url.lastIndexOf('/') + 1);
-  if (MODEL_MAP[filename]) return MODEL_MAP[filename];
-
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-
-  // If file is from /uploads/ (which doesn't exist on Vercel serverless),
-  // fallback gracefully to one of the built-in bundled 3D models so catalog always renders 3D models
-  if (url.startsWith('/uploads/')) {
-    const itemIndex = item && item.id ? (typeof item.id === 'number' ? item.id : String(item.id).charCodeAt(0)) : 0;
-    return FALLBACK_MODELS[Math.abs(itemIndex) % FALLBACK_MODELS.length];
-  }
-
-  return glassesModel;
+  return resolveModelUrl(url, item);
 };
 
 const getModelPath = (item) => {
   if (item.modelUrl) {
-    if (MODEL_MAP[item.modelUrl] || item.modelUrl.toLowerCase().endsWith('.glb')) {
+    if (MODEL_MAP[item.modelUrl] || item.modelUrl.toLowerCase().endsWith('.glb') || item.modelUrl.includes('/models/')) {
       return item.modelUrl;
     }
   }
   if (item.imageUrl) {
-    if (MODEL_MAP[item.imageUrl] || item.imageUrl.toLowerCase().endsWith('.glb')) {
+    if (MODEL_MAP[item.imageUrl] || item.imageUrl.toLowerCase().endsWith('.glb') || item.imageUrl.includes('/models/')) {
       return item.imageUrl;
     }
   }

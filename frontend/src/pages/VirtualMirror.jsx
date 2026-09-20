@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import TryOnCanvas3D from "../components/TryOnCanvas3D";
 import { API_BASE_URL } from "../config/api";
+import { resolveModelUrl } from "../utils/modelResolver";
 
 const MOCK_FRAMES = [
-  { id: "frame1", name: "Urban Tech Square", color: "Matte Black", price: "$120", type: "Square", svgPath: "M5 10h5v4H5zm9 0h5v4h-5z M10 12h4", glbUrl: "/src/assets/models/oakley_glasses.glb" },
-  { id: "frame2", name: "Classic Aviator", color: "Polished Gold", price: "$145", type: "Aviator", svgPath: "M4 9c0-1.5 1.5-3 3.5-3s3.5 1.5 3.5 3c0 2-2.5 3.5-3.5 3.5S4 11 4 9zm13 0c0-1.5 1.5-3 3.5-3S24 7.5 24 9c0 2-2.5 3.5-3.5 3.5S17 11 17 9z M11 9.5h5", glbUrl: "/src/assets/models/ray_ban_glasses.glb" },
-  { id: "frame3", name: "Retro Round", color: "Classic Tortoise", price: "$110", type: "Round", svgPath: "M5 11c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4zm11 0c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z M13 11h3", glbUrl: "/src/assets/models/metal_round_glasses.glb" },
-  { id: "frame4", name: "Geometric Hex", color: "Rose Gold", price: "$130", type: "Geometric", svgPath: "M4.5 9.5l2-2.5h4l2 2.5v3l-2 2.5h-4l-2-2.5zm11.5 0l2-2.5h4l2 2.5v3l-2 2.5h-4l-2-2.5z M12.5 11h3", glbUrl: "/src/assets/models/cartoon_glasses.glb" }
+  { id: "frame1", name: "Urban Tech Square", color: "Matte Black", price: "$120", type: "Square", svgPath: "M5 10h5v4H5zm9 0h5v4h-5z M10 12h4", glbUrl: resolveModelUrl("/src/assets/models/oakley_glasses.glb") },
+  { id: "frame2", name: "Classic Aviator", color: "Polished Gold", price: "$145", type: "Aviator", svgPath: "M4 9c0-1.5 1.5-3 3.5-3s3.5 1.5 3.5 3c0 2-2.5 3.5-3.5 3.5S4 11 4 9zm13 0c0-1.5 1.5-3 3.5-3S24 7.5 24 9c0 2-2.5 3.5-3.5 3.5S17 11 17 9z M11 9.5h5", glbUrl: resolveModelUrl("/src/assets/models/ray_ban_glasses.glb") },
+  { id: "frame3", name: "Retro Round", color: "Classic Tortoise", price: "$110", type: "Round", svgPath: "M5 11c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4zm11 0c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z M13 11h3", glbUrl: resolveModelUrl("/src/assets/models/metal_round_glasses.glb") },
+  { id: "frame4", name: "Geometric Hex", color: "Rose Gold", price: "$130", type: "Geometric", svgPath: "M4.5 9.5l2-2.5h4l2 2.5v3l-2 2.5h-4l-2-2.5zm11.5 0l2-2.5h4l2 2.5v3l-2 2.5h-4l-2-2.5z M12.5 11h3", glbUrl: resolveModelUrl("/src/assets/models/cartoon_glasses.glb") }
 ];
 
 export default function VirtualMirror() {
@@ -80,25 +81,8 @@ export default function VirtualMirror() {
             const framesData = data.filter(item => !isLensItem(item));
 
             const mapped = framesData.map((item, idx) => {
-              let glbUrl = MOCK_FRAMES[idx % MOCK_FRAMES.length].glbUrl;
-
-              // Resolve 3D model path from db if available
-              let dbModelUrl = null;
-              if (item.modelUrl && (item.modelUrl.toLowerCase().endsWith('.glb') || item.modelUrl.includes('/models/'))) {
-                dbModelUrl = item.modelUrl;
-              } else if (item.imageUrl && (item.imageUrl.toLowerCase().endsWith('.glb') || item.imageUrl.includes('/models/'))) {
-                dbModelUrl = item.imageUrl;
-              }
-
-              if (dbModelUrl) {
-                if (dbModelUrl.startsWith('http://') || dbModelUrl.startsWith('https://')) {
-                  glbUrl = dbModelUrl;
-                } else if (dbModelUrl.includes('/models/')) {
-                  glbUrl = dbModelUrl;
-                } else if (!dbModelUrl.startsWith('/uploads/')) {
-                  glbUrl = dbModelUrl.replace('/src/assets/', '/src/assets/models/');
-                }
-              }
+              let rawUrl = item.modelUrl || item.imageUrl;
+              let glbUrl = rawUrl ? resolveModelUrl(rawUrl, item) : MOCK_FRAMES[idx % MOCK_FRAMES.length].glbUrl;
               return {
                 id: item.id,
                 name: item.name,

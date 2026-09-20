@@ -1,9 +1,11 @@
 import React, { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Stage } from '@react-three/drei';
+import { resolveModelUrl } from '../utils/modelResolver';
 
 function Model({ modelPath }) {
-  const { scene } = useGLTF(modelPath);
+  const resolvedPath = useMemo(() => resolveModelUrl(modelPath), [modelPath]);
+  const { scene } = useGLTF(resolvedPath);
   // Clone the scene so that multiple canvases can display it independently without reference hijacking
   const clonedScene = useMemo(() => scene.clone(), [scene]);
   return <primitive object={clonedScene} scale={1.5} />;
