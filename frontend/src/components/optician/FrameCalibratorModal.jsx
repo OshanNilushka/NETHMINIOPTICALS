@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TryOnCanvas3D from "../TryOnCanvas3D";
 import { API_BASE_URL } from "../../config/api";
+import { resolveModelUrl } from "../../utils/modelResolver";
 
 // Sample static 3D facial landmarks for calibration preview
 const SAMPLE_FACE_LANDMARKS = Array(478).fill(null).map((_, idx) => {
@@ -33,10 +34,7 @@ export default function FrameCalibratorModal({ frame, onClose, onSaveSuccess }) 
   const landmarksRef = { current: SAMPLE_FACE_LANDMARKS };
 
   // Resolve model GLB URL
-  let glbUrl = frame?.modelUrl || frame?.imageUrl || "/src/assets/models/oakley_glasses.glb";
-  if (glbUrl.startsWith("/uploads/")) {
-    glbUrl = "/src/assets/models/oakley_glasses.glb";
-  }
+  let glbUrl = resolveModelUrl(frame?.modelUrl || frame?.imageUrl || "/src/assets/models/oakley_glasses.glb", frame);
 
   const handleReset = () => {
     setScaleMultiplier(1.0);

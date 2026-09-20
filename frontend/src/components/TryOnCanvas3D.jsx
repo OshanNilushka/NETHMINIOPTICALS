@@ -2,6 +2,7 @@ import React, { useRef, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+import { resolveModelUrl } from '../utils/modelResolver';
 
 class TryOnErrorBoundary extends React.Component {
   constructor(props) {
@@ -356,13 +357,7 @@ function GlassesFollower({ modelPath, landmarksRef, isMirrored, calibration = {}
 
 export default function TryOnCanvas3D({ modelPath, landmarksRef, isMirrored = true, calibration = {} }) {
   const resolvedModelPath = useMemo(() => {
-    if (!modelPath) return null;
-    if (modelPath.startsWith('/src/assets/')) {
-      if (!modelPath.includes('/models/')) {
-        return modelPath.replace('/src/assets/', '/src/assets/models/');
-      }
-    }
-    return modelPath;
+    return resolveModelUrl(modelPath);
   }, [modelPath]);
 
   if (!resolvedModelPath) return null;
