@@ -4,6 +4,7 @@ import Catalog from "../components/Catalog";
 import FeedbackSubmissionPanel from "../components/customer/FeedbackSubmissionPanel";
 import { jsPDF } from "jspdf";
 import { API_BASE_URL } from "../config/api";
+import { resolveModelUrl } from "../utils/modelResolver";
 
 // Mock Data for the Dashboard
 const MOCK_PROFILE = {
